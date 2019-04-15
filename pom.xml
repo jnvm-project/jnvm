@@ -28,6 +28,11 @@
       <version>5.4.2</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>net.bramp.unsafe</groupId>
+      <artifactId>unsafe-helper</artifactId>
+      <version>1.0</version>
+    </dependency>
   </dependencies>
 
   <build>
@@ -49,6 +54,9 @@
       <plugin>
         <artifactId>maven-surefire-plugin</artifactId>
         <version>2.22.1</version>
+        <configuration>
+          <argLine>-Xmx1g -Djava.library.path=${project.build.directory}:${java.library.path}</argLine>
+        </configuration>
       </plugin>
       <plugin>
         <artifactId>maven-jar-plugin</artifactId>
