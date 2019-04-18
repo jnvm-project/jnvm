@@ -7,6 +7,7 @@ import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.CriteriaUpdate;
 import javax.persistence.criteria.CriteriaDelete;
+import javax.persistence.PersistenceException;
 import javax.persistence.SynchronizationType;
 import javax.persistence.LockModeType;
 import javax.persistence.FlushModeType;
@@ -29,174 +30,226 @@ public class JNVMEntityManager implements EntityManager {
 
     @Override
     public void persist(Object entity) {
+        //TODO Implement me !
+        throw new UnsupportedOperationException("persist");
     }
     @Override
     public <T> T merge(T entity) {
-        return null;
+        //TODO Implement me !
+        throw new UnsupportedOperationException("merge");
     }
     @Override
     public void remove(Object entity) {
+        //TODO Implement me !
+        throw new UnsupportedOperationException("remove");
     }
     @Override
     public <T> T find(Class<T> entityClass, Object primaryKey) {
-        return null;
+        //TODO Implement me !
+        throw new UnsupportedOperationException("find");
     }
     @Override
     public <T> T find(Class<T> entityClass, Object primaryKey,
                       Map<String, Object> properties) {
-        return null;
+        //TODO Implement me !
+        throw new UnsupportedOperationException("find");
     }
     @Override
     public <T> T find(Class<T> entityClass, Object primaryKey,
                       LockModeType lockMode) {
-        return null;
+        //TODO Implement me !
+        throw new UnsupportedOperationException("find");
     }
     @Override
     public <T> T find(Class<T> entityClass, Object primaryKey,
                       LockModeType lockMode,
                       Map<String, Object> properties) {
-        return null;
+        //TODO Implement me !
+        throw new UnsupportedOperationException("find");
     }
     @Override
     public <T> T getReference(Class<T> entityClass,
                               Object primaryKey) {
-        return null;
+        //TODO Implement me !
+        throw new UnsupportedOperationException("getReference");
     }
     @Override
     public void flush() {
+        //TODO Implement me !
+        throw new UnsupportedOperationException("flush");
     }
     @Override
     public void setFlushMode(FlushModeType flushMode) {
+        //TODO Implement me !
+        throw new UnsupportedOperationException("setFlushMode");
     }
     @Override
     public FlushModeType getFlushMode() {
-        return FlushModeType.COMMIT;
+        //TODO Implement me !
+        throw new UnsupportedOperationException("getFlushMode");
     }
     @Override
     public void lock(Object entity, LockModeType lockMode) {
+        throw new UnsupportedOperationException("lock");
     }
     @Override
     public void lock(Object entity, LockModeType lockMode,
                      Map<String, Object> properties) {
+        throw new UnsupportedOperationException("lock");
     }
     @Override
     public void refresh(Object entity) {
+        //TODO Implement me !
+        throw new UnsupportedOperationException("refresh");
     }
     @Override
     public void refresh(Object entity,
                         Map<String, Object> properties) {
+        //TODO Implement me !
+        throw new UnsupportedOperationException("refresh");
     }
     @Override
     public void refresh(Object entity, LockModeType lockMode) {
+        //TODO Implement me !
+        throw new UnsupportedOperationException("refresh");
     }
     @Override
     public void refresh(Object entity, LockModeType lockMode,
                         Map<String, Object> properties) {
+        //TODO Implement me !
+        throw new UnsupportedOperationException("refresh");
     }
     @Override
     public void clear() {
+        //TODO Implement me !
+        throw new UnsupportedOperationException("clear");
     }
     @Override
     public void detach(Object entity) {
+        //TODO Implement me !
+        throw new UnsupportedOperationException("detach");
     }
     @Override
     public boolean contains(Object entity) {
-        return false;
+        //TODO Implement me !
+        throw new UnsupportedOperationException("contains");
     }
     @Override
     public LockModeType getLockMode(Object entity) {
-        return LockModeType.NONE;
+        throw new UnsupportedOperationException("getLockMode");
     }
     @Override
     public void setProperty(String propertyName, Object value) {
+        throw new UnsupportedOperationException("setProperty");
     }
     @Override
     public Map<String, Object> getProperties() {
-        return null;
+        throw new UnsupportedOperationException("getProperties");
     }
     @Override
     public Query createQuery(String qlString) {
-        return null;
+        //No plans for querying support yet!
+        throw new UnsupportedOperationException("createQuery");
     }
     @Override
     public <T> TypedQuery<T> createQuery(CriteriaQuery<T> criteriaQuery) {
-        return null;
+        //No plans for querying support yet!
+        throw new UnsupportedOperationException("createQuery");
     }
     @Override
     public Query createQuery(CriteriaUpdate updateQuery) {
-        return null;
+        //No plans for querying support yet!
+        throw new UnsupportedOperationException("createQuery");
     }
     @Override
     public Query createQuery(CriteriaDelete deleteQuery) {
-        return null;
+        //No plans for querying support yet!
+        throw new UnsupportedOperationException("createQuery");
     }
     @Override
     public <T> TypedQuery<T> createQuery(String qlString, Class<T> resultClass) {
-        return null;
+        //No plans for querying support yet!
+        throw new UnsupportedOperationException("createQuery");
     }
     @Override
     public Query createNamedQuery(String name) {
-        return null;
+        //No plans for querying support yet!
+        throw new UnsupportedOperationException("createNamedQuery");
     }
     @Override
     public <T> TypedQuery<T> createNamedQuery(String name, Class<T> resultClass) {
-        return null;
+        //No plans for querying support yet!
+        throw new UnsupportedOperationException("createNamedQuery");
     }
     @Override
     public Query createNativeQuery(String sqlString) {
-        return null;
+        //No plans for querying support yet!
+        throw new UnsupportedOperationException("createNativeQuery");
     }
     @Override
     public Query createNativeQuery(String sqlString, Class resultClass) {
-        return null;
+        //No plans for querying support yet!
+        throw new UnsupportedOperationException("createNativeQuery");
     }
     @Override
     public Query createNativeQuery(String sqlString, String resultSetMapping) {
-        return null;
+        //No plans for querying support yet!
+        throw new UnsupportedOperationException("createNativeQuery");
     }
     @Override
     public StoredProcedureQuery createNamedStoredProcedureQuery(String name) {
-        return null;
+        //No plans for querying support yet!
+        throw new UnsupportedOperationException("createNamedStoredProcedureQuery");
     }
     @Override
     public StoredProcedureQuery createStoredProcedureQuery(String procedureName) {
-        return null;
+        //No plans for querying support yet!
+        throw new UnsupportedOperationException("createStoredProcedureQuery");
     }
     @Override
     public StoredProcedureQuery createStoredProcedureQuery(
             String procedureName, Class... resultClasses) {
-        return null;
+        //No plans for querying support yet!
+        throw new UnsupportedOperationException("createStoredProcedureQuery");
     }
     @Override
     public StoredProcedureQuery createStoredProcedureQuery(
             String procedureName, String... resultSetMappings) {
-        return null;
+        //No plans for querying support yet!
+        throw new UnsupportedOperationException("createStoredProcedureQuery");
     }
     @Override
     public void joinTransaction() {
+        //No plans for transaction support yet!
+        throw new UnsupportedOperationException("joinTransaction");
     }
     @Override
     public boolean isJoinedToTransaction() {
-        return false;
+        //No plans for transaction support yet!
+        throw new UnsupportedOperationException("isJoinedToTransaction");
     }
     @Override
     public <T> T unwrap(Class<T> cls) {
-        return null;
+        throw new PersistenceException("Not yet supported unwrapping of " + cls.getName());
     }
     @Override
     public Object getDelegate() {
-        return null;
+        throw new UnsupportedOperationException("getDelegate");
     }
     @Override
     public void close() {
+        //TODO Implement me !
+        throw new UnsupportedOperationException("close");
     }
     @Override
     public boolean isOpen() {
-        return false;
+        //TODO Implement me !
+        throw new UnsupportedOperationException("isOpen");
     }
     @Override
     public EntityTransaction getTransaction() {
-        return null;
+        //No plans for transaction support yet!
+        throw new UnsupportedOperationException("getTransaction");
     }
     @Override
     public EntityManagerFactory getEntityManagerFactory() {
@@ -204,26 +257,32 @@ public class JNVMEntityManager implements EntityManager {
     }
     @Override
     public CriteriaBuilder getCriteriaBuilder() {
-        return null;
+        //No plans for querying support yet!
+        throw new UnsupportedOperationException("getCriteriaBuilder");
     }
     @Override
     public Metamodel getMetamodel() {
-        return null;
+        //TODO Implement me !
+        throw new UnsupportedOperationException("getMetamodel");
     }
     @Override
     public <T> EntityGraph<T> createEntityGraph(Class<T> rootType) {
-        return null;
+        //TODO Implement me !
+        throw new UnsupportedOperationException("createEntityGraph");
     }
     @Override
     public EntityGraph<?> createEntityGraph(String graphName) {
-        return null;
+        //TODO Implement me !
+        throw new UnsupportedOperationException("createEntityGraph");
     }
     @Override
     public EntityGraph<?> getEntityGraph(String graphName) {
-        return null;
+        //TODO Implement me !
+        throw new UnsupportedOperationException("getEntityGraph");
     }
     @Override
     public <T> List<EntityGraph<? super T>> getEntityGraphs(Class<T> entityClass) {
-        return null;
+        //TODO Implement me !
+        throw new UnsupportedOperationException("getEntityGraphs");
     }
 }
