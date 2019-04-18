@@ -4,6 +4,7 @@ import java.util.Map;
 import javax.persistence.metamodel.Metamodel;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.spi.PersistenceUnitInfo;
+import javax.persistence.PersistenceException;
 import javax.persistence.SynchronizationType;
 import javax.persistence.Cache;
 import javax.persistence.PersistenceUnitUtil;
@@ -36,39 +37,68 @@ public class JNVMEntityManagerFactory implements EntityManagerFactory {
     }
     @Override
     public CriteriaBuilder getCriteriaBuilder() {
-        return null;
+        //No plans for querying support yet!
+        throw new UnsupportedOperationException("getCriteriaBuilder");
     }
     @Override
     public Metamodel getMetamodel() {
-        return null;
+        //TODO Implement me !
+        throw new UnsupportedOperationException("getMetamodel");
     }
     @Override
     public boolean isOpen() {
-        return false;
+        //TODO Implement me !
+        throw new UnsupportedOperationException("isOpen");
     }
     @Override
     public void close() {
+        //TODO Implement me !
+        throw new UnsupportedOperationException("close");
     }
     @Override
     public Map<String, Object> getProperties() {
-        return null;
+        //TODO Implement me !
+        throw new UnsupportedOperationException("getProperties");
     }
     @Override
     public Cache getCache() {
+        //We might never need a second-level cache!
         return null;
     }
     @Override
     public PersistenceUnitUtil getPersistenceUnitUtil() {
-        return null;
+        return new PersistenceUnitUtilImpl();
     }
     @Override
     public void addNamedQuery(String name, Query query) {
+        //No plans for querying support yet!
+        throw new UnsupportedOperationException("addNamedQuery");
     }
     @Override
     public <T> T unwrap(Class<T> cls) {
-        return null;
+        throw new PersistenceException("Not yet supported unwrapping of " + cls.getName());
     }
     @Override
     public <T> void addNamedEntityGraph(String graphName, EntityGraph<T> entityGraph) {
+        //TODO Implement me !
+        throw new UnsupportedOperationException("addNamedEntityGraph");
+    }
+
+    private class PersistenceUnitUtilImpl implements PersistenceUnitUtil {
+        @Override
+        public boolean isLoaded(Object entity, String attributeName) {
+            //TODO Implement me !
+            throw new UnsupportedOperationException("isLoaded");
+        }
+        @Override
+        public boolean isLoaded(Object entity) {
+            //TODO Implement me !
+            throw new UnsupportedOperationException("isLoaded");
+        }
+        @Override
+        public Object getIdentifier(Object entity) {
+            //TODO Implement me !
+            throw new UnsupportedOperationException("getIdentifier");
+        }
     }
 }
