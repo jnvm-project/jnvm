@@ -10,35 +10,41 @@ import javax.persistence.spi.LoadState;
 public class JNVMPersistenceProvider implements PersistenceProvider {
     @Override
     public EntityManagerFactory createEntityManagerFactory(String emName, Map properties) {
+        //TODO Validate parameters
         return new JNVMEntityManagerFactory(emName, properties);
     }
     @Override
     public EntityManagerFactory createContainerEntityManagerFactory(PersistenceUnitInfo emInfo, Map properties) {
+        //TODO Validate parameters
         return new JNVMEntityManagerFactory(emInfo, properties);
     }
     @Override
     public void generateSchema(PersistenceUnitInfo emInfo, Map properties) {
+        throw new UnsupportedOperationException("generateSchema");
     }
     @Override
     public boolean generateSchema(String emName, Map properties) {
-        return false;
+        throw new UnsupportedOperationException("generateSchema");
     }
     @Override
     public ProviderUtil getProviderUtil() {
         return new ProviderUtilImpl();
     }
-    private static class ProviderUtilImpl implements ProviderUtil {
+    private class ProviderUtilImpl implements ProviderUtil {
         @Override
         public LoadState isLoadedWithoutReference(Object entity, String attributeName) {
-            return LoadState.NOT_LOADED;
+            //TODO Implement me !
+            throw new UnsupportedOperationException("isLoadedWithoutReference");
         }
         @Override
         public LoadState isLoadedWithReference(Object entity, String attributeName) {
-            return LoadState.NOT_LOADED;
+            //TODO Implement me !
+            throw new UnsupportedOperationException("isLoadedWithReference");
         }
         @Override
         public LoadState isLoaded(Object entity) {
-            return LoadState.NOT_LOADED;
+            //TODO Implement me !
+            throw new UnsupportedOperationException("isLoaded");
         }
     }
 }
