@@ -10,8 +10,9 @@ public class JNVMEntityTransaction implements EntityTransaction {
     public void begin() {
         assertInactive();
 
-        active = true;
         //TODO Add begin TX code
+
+        active = true;
     }
     @Override
     public void commit() {
@@ -19,6 +20,8 @@ public class JNVMEntityTransaction implements EntityTransaction {
 
         //TODO Add commit TX code (em flush)
         //TODO throw RollbackException upon commit failure
+
+        active = false;
     }
     @Override
     public void rollback() {
@@ -26,6 +29,8 @@ public class JNVMEntityTransaction implements EntityTransaction {
 
         //TODO Add rollback TX code
         //TODO throw PersistenceException upon unexpected error condition
+
+        active = false;
     }
     @Override
     public void setRollbackOnly() {

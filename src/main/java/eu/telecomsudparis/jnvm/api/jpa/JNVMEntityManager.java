@@ -22,6 +22,7 @@ import javax.persistence.EntityManager;
 public class JNVMEntityManager implements EntityManager {
     private EntityManagerFactory emf;
     private SynchronizationType syncType;
+    private EntityTransaction tx = new JNVMEntityTransaction();
     private boolean closed = false;
 
     public JNVMEntityManager(EntityManagerFactory emf, SynchronizationType syncType) {
@@ -331,8 +332,7 @@ public class JNVMEntityManager implements EntityManager {
     }
     @Override
     public EntityTransaction getTransaction() {
-        //No plans for transaction support yet!
-        throw new UnsupportedOperationException("getTransaction");
+        return tx;
     }
     @Override
     public EntityManagerFactory getEntityManagerFactory() {
