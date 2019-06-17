@@ -2,6 +2,7 @@ package eu.telecomsudparis.jnvm.api.jpa;
 
 import java.util.Map;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import javax.persistence.metamodel.Metamodel;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
@@ -25,6 +26,8 @@ public class JNVMEntityManager implements EntityManager {
     private EntityTransaction tx = new JNVMEntityTransaction();
     private boolean closed = false;
 
+    private static ConcurrentHashMap<Object,Object> backend = new ConcurrentHashMap<Object,Object>();
+
     public JNVMEntityManager(EntityManagerFactory emf, SynchronizationType syncType) {
         this.emf = emf;
         this.syncType = syncType;
@@ -34,29 +37,28 @@ public class JNVMEntityManager implements EntityManager {
     public void persist(Object entity) {
         assertIsOpen();
 
-        //TODO Implement me !
-        throw new UnsupportedOperationException("persist");
+        //TODO find out object class and retrieve id field to use as key
+        backend.put(1L, entity);
     }
     @Override
     public <T> T merge(T entity) {
         assertIsOpen();
 
-        //TODO Implement me !
-        throw new UnsupportedOperationException("merge");
+        //TODO find out object class and retrieve id field to use as key
+        return (T) backend.replace(1L, entity);
     }
     @Override
     public void remove(Object entity) {
         assertIsOpen();
 
-        //TODO Implement me !
-        throw new UnsupportedOperationException("remove");
+        //TODO find out object class and retrieve id field to use as key
+        backend.remove(1L);
     }
     @Override
     public <T> T find(Class<T> entityClass, Object primaryKey) {
         assertIsOpen();
 
-        //TODO Implement me !
-        throw new UnsupportedOperationException("find");
+        return (T) backend.get(primaryKey);
     }
     @Override
     public <T> T find(Class<T> entityClass, Object primaryKey,
@@ -159,8 +161,7 @@ public class JNVMEntityManager implements EntityManager {
     public void clear() {
         assertIsOpen();
 
-        //TODO Implement me !
-        throw new UnsupportedOperationException("clear");
+        backend.clear();
     }
     @Override
     public void detach(Object entity) {
