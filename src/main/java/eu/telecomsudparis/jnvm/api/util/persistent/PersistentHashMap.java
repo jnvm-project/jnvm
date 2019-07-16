@@ -5,10 +5,9 @@ import java.util.Set;
 import java.util.Map;
 import java.util.Collection;
 import java.util.AbstractMap;
-import java.util.concurrent.ConcurrentMap;
 
 public class PersistentHashMap<K,V> extends AbstractMap<K,V>
-    implements PersistentMap<K,V>, ConcurrentMap<K,V> {
+    implements PersistentMap<K,V> {
 
     public PersistentHashMap() {
         //TODO Implement me !
@@ -85,25 +84,10 @@ public class PersistentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /* ConcurrentMap methods */
-
-    public V putIfAbsent(K key, V value) {
-        //TODO Implement me !
-        return null;
-    }
-
-    public boolean remove(Object key, Object value) {
-        //TODO Implement me !
-        return false;
-    }
-
-    public boolean replace(K key, V oldValue, V newValue) {
-        //TODO Implement me !
-        return false;
-    }
-
-    public V replace(K key, V value) {
-        //TODO Implement me !
-        return null;
-    }
-
+    /*
+     * For now, let's not worry about making this Map thread-safe,
+     * since we should be able to open multiple PersistentMap from the same
+     * Persistent Pool
+     *
+     */
 }
