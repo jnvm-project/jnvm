@@ -1,5 +1,8 @@
 package eu.telecomsudparis.jnvm.api.jpa;
 
+import eu.telecomsudparis.jnvm.api.PMemPool;
+import eu.telecomsudparis.jnvm.api.util.persistent.PersistentHashMap;
+
 import java.util.Map;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -26,11 +29,14 @@ public class JNVMEntityManager implements EntityManager {
     private EntityTransaction tx = new JNVMEntityTransaction();
     private boolean closed = false;
 
-    private static ConcurrentHashMap<Object,Object> backend = new ConcurrentHashMap<Object,Object>();
+    private static final String pmemFile = "/tmp/pMemEM";
+    private static final long pmemPoolSize = 1*1024*1024*1024L;
+    private PersistentHashMap<Object,Object> backend;
 
     public JNVMEntityManager(EntityManagerFactory emf, SynchronizationType syncType) {
         this.emf = emf;
         this.syncType = syncType;
+        backend = new PersistentHashMap<Object,Object>( new PMemPool( pmemPoolSize, pmemFile ) );
     }
 
     @Override
