@@ -6,6 +6,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Assumptions;
 
+import eu.telecomsudparis.jnvm.api.PMem;
+
 class PMemTests {
 
     private sun.misc.Unsafe unsafe = net.bramp.unsafe.UnsafeHelper.getUnsafe();
@@ -14,12 +16,11 @@ class PMemTests {
     private final static long POOL_SIZE=1024*1024L;
     private final static int PERSISTENT_VALUE=1;
 
-    private final PMem pmem = new PMem();
     private long base;
 
     @BeforeEach
     void setup() {
-        base = pmem.openPmemRoot(PMEM_FILE, POOL_SIZE);
+        base = PMem.openPmemRoot(PMEM_FILE, POOL_SIZE);
     }
 
     @Test
@@ -39,7 +40,7 @@ class PMemTests {
 
     @AfterEach
     void tearDown() {
-        pmem.freePmemRoot(base, POOL_SIZE);
+        PMem.freePmemRoot(base, POOL_SIZE);
     }
 
 }
