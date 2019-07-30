@@ -120,6 +120,10 @@ public class PMemPool {
         return index * BLOCK_SIZE;
     }
 
+    private int block_index(long position) {
+        return (int) ( position / BLOCK_SIZE );
+    }
+
     private void putRaw(byte[] src, long offset, long bytes) {
         unsafe.copyMemory( src, arrayBaseOffset,
                            null, base_addr + offset, bytes );
@@ -139,7 +143,7 @@ public class PMemPool {
         putRaw( src, block_offset( index ) );
     }
 
-    public void put(byte[] src) {
+    public int put(byte[] src) {
         assertLoaded();
 
         putRaw( src, getPosition() );
@@ -147,6 +151,8 @@ public class PMemPool {
         //TODO Atomic increment
         long old_position = getPosition();
         setPosition( old_position + BLOCK_SIZE );
+
+        return block_index( old_position );
     }
 
     private void getRaw(byte[] dst, long offset, long bytes) {
