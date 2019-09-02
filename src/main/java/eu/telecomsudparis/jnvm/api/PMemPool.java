@@ -104,15 +104,17 @@ public class PMemPool {
     public void setSize(long size) {
         assertLoaded();
 
-        //TODO Safe Persistent Set
         unsafe.putLong( size_addr, size );
+        //TODO CLWB
+        //TODO SFENCE
     }
 
     public void setPosition(Long position) {
         assertLoaded();
 
-        //TODO Safe Persistent Set
         unsafe.putLong( position_addr, position );
+        //TODO CLWB
+        //TODO SFENCE
     }
 
     //Data manipulation methods
@@ -127,10 +129,16 @@ public class PMemPool {
     private void putRaw(byte[] src, long offset, long bytes) {
         unsafe.copyMemory( src, arrayBaseOffset,
                            null, base_addr + offset, bytes );
+        //TODO CLWB each cache line
+        //     No need for SFENCE since getAndAddLong() should induce a lock
+        //     instruction which would be ordered with previous CLWB.
 
-        //TODO Atomic increment
-        long old_size = getSize();
-        setSize( old_size + 1 );
+        unsafe.getAndAddLong( null, size_addr, 1L );
+        //TODO CLWB
+
+        //TODO Set block header validity bit
+        //TODO CLWB
+        //TODO SFENCE
     }
 
     private void putRaw(byte[] src, long offset) {
@@ -146,13 +154,12 @@ public class PMemPool {
     public int put(byte[] src) {
         assertLoaded();
 
-        putRaw( src, getPosition() );
+        long position = unsafe.getAndAddLong( null, position_addr, BLOCK_SIZE );
+        //TODO CLWB
 
-        //TODO Atomic increment
-        long old_position = getPosition();
-        setPosition( old_position + BLOCK_SIZE );
+        putRaw( src, position );
 
-        return block_index( old_position );
+        return block_index( position );
     }
 
     private void getRaw(byte[] dst, long offset, long bytes) {
@@ -174,19 +181,24 @@ public class PMemPool {
     public void get(byte[] dst) {
         assertLoaded();
 
-        getRaw( dst, getPosition() );
+        long position = unsafe.getAndAddLong( null, position_addr, BLOCK_SIZE );
+        //TODO CLWB
 
-        //TODO Atomic increment
-        long old_position = getPosition();
-        setPosition( old_position + BLOCK_SIZE );
+        getRaw( dst, position );
     }
 
     private void removeRaw(long offset) {
         unsafe.setMemory( base_addr + offset, BLOCK_SIZE, (byte) 0 );
+        //TODO CLWB each cache line
+        //     No need for SFENCE since getAndAddLong() should induce a lock
+        //     instruction which would be ordered with previous CLWB.
 
-        //TODO Atomic decrement
-        long old_size = getSize();
-        setSize( old_size - 1 );
+        unsafe.getAndAddLong( null, size_addr, -1L );
+        //TODO CLWB
+
+        //TODO Set block header validity bit
+        //TODO CLWB
+        //TODO SFENCE
     }
 
     public void remove(int index) {
@@ -206,6 +218,8 @@ public class PMemPool {
 
         if( erase ) {
             unsafe.setMemory( address, limit, (byte) 0 );
+            //TODO CLWB each cache line
+            //TODO SFENCE
         } else {
             setSize( 0L );
             setPosition( 0L );
