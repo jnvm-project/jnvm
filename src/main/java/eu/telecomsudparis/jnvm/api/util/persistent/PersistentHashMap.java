@@ -53,19 +53,18 @@ public class PersistentHashMap<K,V> extends AbstractMap<K,V>
         //TODO Populate transient Maps
         //TODO Nicer way of iterating over PMemPools
         for( int idx=0; idx < pmemPool.getSize() - 1; idx += 2 ) {
+            byte[] kbytes = new byte[ (int) keySize ];
+            byte[] vbytes = new byte[ (int) valueSize ];
+            pmemPool.get( kbytes, idx );
+            pmemPool.get( vbytes, idx + 1 );
             try {
                 /*
-                long addr = pmemPool.getAddress( idx );
                 K k = (K) unsafe.allocateInstance( Object.class );
                 V v = (V) unsafe.allocateInstance( Object.class );
-                unsafe.copyMemory(null, addr, k, keyBaseOffset, keySize);
-                unsafe.copyMemory(null, addr + keySize, v, valueBaseOffset, valueSize);
+                unsafe.copyMemory(kbytes, arrayBaseOffset, k, keyBaseOffset, keySize);
+                unsafe.copyMemory(vbytes, arrayBaseOffset, v, valueBaseOffset, valueSize);
                 */
 
-                byte[] kbytes = new byte[ (int) keySize ];
-                byte[] vbytes = new byte[ (int) valueSize ];
-                pmemPool.get( kbytes, idx );
-                pmemPool.get( vbytes, idx + 1 );
                 K k = (K) toObject( kbytes );
                 V v = (V) toObject( vbytes );
                 index.put( k, idx );
@@ -138,13 +137,13 @@ public class PersistentHashMap<K,V> extends AbstractMap<K,V>
             //TODO Retrieve value from addr in Persistent Pool
             //v = pmemPool.get( addr ).getValue();
             try {
-                /*
-                long addr = pmemPool.getAddress( idx );
-                v = (V) unsafe.allocateInstance( Object.class );
-                unsafe.copyMemory(null, addr + keySize, v, valueBaseOffset, valueSize);
-                */
                 byte[] vbytes = new byte[ (int) valueSize ];
                 pmemPool.get( vbytes, idx + 1 );
+
+                /*
+                v = (V) unsafe.allocateInstance( Object.class );
+                unsafe.copyMemory(vbytes, arrayBaseOffset, v, valueBaseOffset, valueSize);
+                */
                 v = (V) toObject( vbytes );
 
                 //TODO Put value in cache
