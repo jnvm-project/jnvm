@@ -26,6 +26,9 @@ public class PersistentHashMap<K,V> extends AbstractMap<K,V>
 
     private transient PMemPool pmemPool;
 
+    private transient Class<K> kClazz = null;
+    private transient Class<V> vClazz = null;
+
     public PersistentHashMap(PMemPool pmemPool) {
         this( DEFAULT_SIZE, pmemPool );
     }
@@ -36,6 +39,19 @@ public class PersistentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     public PersistentHashMap(int initialCapacity, PMemPool pmemPool) {
+        this( null, null, initialCapacity, pmemPool );
+    }
+
+    public PersistentHashMap(Class<K> kClazz, Class<V> vClazz, int initialCapacity, PMemPool pmemPool) {
+        //TODO Recover klazz without passing them to constructor
+        if( kClazz != null && vClazz != null ) {
+            this.kClazz = kClazz;
+            this.vClazz = vClazz;
+            keyBaseOffset = UnsafeHelper.firstFieldOffset( kClazz );
+            keySize = UnsafeHelper.sizeOf( kClazz ) - keyBaseOffset;
+            valueBaseOffset = UnsafeHelper.firstFieldOffset( vClazz );
+            valueSize = UnsafeHelper.sizeOf( vClazz ) - valueBaseOffset;
+        }
         //TODO Connect to Persistent Pool
         this.pmemPool = pmemPool;
         //TODO Recover Persistent Pool
@@ -59,14 +75,15 @@ public class PersistentHashMap<K,V> extends AbstractMap<K,V>
             pmemPool.get( vbytes, idx + 1 );
             try {
                 /*
-                K k = (K) unsafe.allocateInstance( Object.class );
-                V v = (V) unsafe.allocateInstance( Object.class );
+                K k = (K) unsafe.allocateInstance( kClazz );
+                V v = (V) unsafe.allocateInstance( vClazz );
                 unsafe.copyMemory(kbytes, arrayBaseOffset, k, keyBaseOffset, keySize);
                 unsafe.copyMemory(vbytes, arrayBaseOffset, v, valueBaseOffset, valueSize);
                 */
 
                 K k = (K) toObject( kbytes );
                 V v = (V) toObject( vbytes );
+
                 index.put( k, idx );
                 cache.put( k, v );
             } catch (Exception e) {
@@ -141,9 +158,10 @@ public class PersistentHashMap<K,V> extends AbstractMap<K,V>
                 pmemPool.get( vbytes, idx + 1 );
 
                 /*
-                v = (V) unsafe.allocateInstance( Object.class );
+                v = (V) unsafe.allocateInstance( vClazz );
                 unsafe.copyMemory(vbytes, arrayBaseOffset, v, valueBaseOffset, valueSize);
                 */
+
                 v = (V) toObject( vbytes );
 
                 //TODO Put value in cache
@@ -204,10 +222,10 @@ public class PersistentHashMap<K,V> extends AbstractMap<K,V>
     // Unsafe Mechanics
     private static final sun.misc.Unsafe unsafe;
     private static final long arrayBaseOffset;
-    private static final long keyBaseOffset = 12L;
-    private static final long keySize = 256L;
-    private static final long valueBaseOffset = 12L;
-    private static final long valueSize = 256L;
+    private static long keyBaseOffset = 12L;
+    private static long keySize = 256L;
+    private static long valueBaseOffset = 12L;
+    private static long valueSize = 256L;
     static {
         try {
             unsafe = net.bramp.unsafe.UnsafeHelper.getUnsafe();
