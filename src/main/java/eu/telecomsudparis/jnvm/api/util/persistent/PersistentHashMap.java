@@ -77,8 +77,15 @@ public class PersistentHashMap<K,V> extends AbstractMap<K,V>
                 /*
                 K k = (K) unsafe.allocateInstance( kClazz );
                 V v = (V) unsafe.allocateInstance( vClazz );
-                unsafe.copyMemory(kbytes, arrayBaseOffset, k, keyBaseOffset, keySize);
-                unsafe.copyMemory(vbytes, arrayBaseOffset, v, valueBaseOffset, valueSize);
+                //Unsafe won't let you do that :(
+                //unsafe.copyMemory(kbytes, arrayBaseOffset, k, keyBaseOffset, keySize);
+                //unsafe.copyMemory(vbytes, arrayBaseOffset, v, valueBaseOffset, valueSize);
+                for( int i=0; i < kbytes.length; i++) {
+                    unsafe.putByte( k, keyBaseOffset + Byte.BYTES * i, kbytes[i] );
+                }
+                for( int i=0; i < vbytes.length; i++) {
+                    unsafe.putByte( v, valueBaseOffset + Byte.BYTES * i, vbytes[i] );
+                }
                 */
 
                 K k = (K) toObject( kbytes );
@@ -159,7 +166,11 @@ public class PersistentHashMap<K,V> extends AbstractMap<K,V>
 
                 /*
                 v = (V) unsafe.allocateInstance( vClazz );
-                unsafe.copyMemory(vbytes, arrayBaseOffset, v, valueBaseOffset, valueSize);
+                //Unsafe won't let you do that :(
+                //unsafe.copyMemory(vbytes, arrayBaseOffset, v, valueBaseOffset, valueSize);
+                for( int i=0; i < vbytes.length; i++) {
+                    unsafe.putByte( v, valueBaseOffset + Byte.BYTES * i, vbytes[i] );
+                }
                 */
 
                 v = (V) toObject( vbytes );
