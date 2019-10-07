@@ -1,0 +1,12 @@
+diff -r 7576bbd5a03c -r 43db5c16e4f2 make/linux/makefiles/gcc.make
+--- a/make/linux/makefiles/gcc.make	Fri Aug 09 00:11:11 2019 +0100
++++ b/make/linux/makefiles/gcc.make	Tue Sep 17 14:49:35 2019 +0200
+@@ -201,7 +201,7 @@
+ endif
+
+ # Compiler warnings are treated as errors
+-WARNINGS_ARE_ERRORS = -Werror
++#WARNINGS_ARE_ERRORS = -Werror
+
+ ifeq ($(USE_CLANG), true)
+   # However we need to clean the code up before we can unrestrictedly enable this option with Clang
