@@ -60,7 +60,7 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <version>2.22.1</version>
         <configuration>
-          <argLine>-Xmx1g -Djava.library.path=${project.build.outputDirectory}</argLine>
+          <argLine>-Xmx1g</argLine>
         </configuration>
       </plugin>
       <plugin>
