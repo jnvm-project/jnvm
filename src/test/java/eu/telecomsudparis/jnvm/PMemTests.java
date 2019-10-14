@@ -12,7 +12,7 @@ class PMemTests {
 
     private sun.misc.Unsafe unsafe = net.bramp.unsafe.UnsafeHelper.getUnsafe();
 
-    private final static String PMEM_FILE="/tmp/pMemTests";
+    private final static String PMEM_FILE="/pmem0/pMemTests";
     private final static long POOL_SIZE=1024*1024L;
     private final static int PERSISTENT_VALUE=1;
 
