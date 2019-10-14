@@ -133,7 +133,8 @@ public class PMemPool {
         unsafe.writebackMemory( base_addr + offset, bytes );
         unsafe.pfence();
 
-        unsafe.getAndAddLong( null, size_addr, 1L );
+        //TODO Add support for concurrency
+        unsafe.putLong( size_addr, unsafe.getLong( size_addr ) + 1 );
         unsafe.pwb( size_addr );
 
         //TODO Set block header validity bit
@@ -154,7 +155,9 @@ public class PMemPool {
     public int put(byte[] src) {
         assertLoaded();
 
-        long position = unsafe.getAndAddLong( null, position_addr, BLOCK_SIZE );
+        //TODO Add support for concurrency
+        long position = unsafe.getLong( position_addr );
+        unsafe.putLong( position_addr, position + BLOCK_SIZE );
         unsafe.pwb( position_addr );
         unsafe.pfence();
 
@@ -182,7 +185,9 @@ public class PMemPool {
     public void get(byte[] dst) {
         assertLoaded();
 
-        long position = unsafe.getAndAddLong( null, position_addr, BLOCK_SIZE );
+        //TODO Add support for concurrency
+        long position = unsafe.getLong( position_addr );
+        unsafe.putLong( position_addr, position + BLOCK_SIZE );
         unsafe.pwb( position_addr );
         unsafe.pfence();
 
@@ -195,7 +200,8 @@ public class PMemPool {
         unsafe.writebackMemory( base_addr + offset, BLOCK_SIZE );
         unsafe.pfence();
 
-        unsafe.getAndAddLong( null, size_addr, -1L );
+        //TODO Add support for concurrency
+        unsafe.putLong( size_addr, unsafe.getLong( size_addr ) - 1 );
         unsafe.pwb( size_addr );
 
         //TODO Set block header validity bit
