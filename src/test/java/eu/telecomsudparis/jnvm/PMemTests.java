@@ -1,4 +1,4 @@
-package eu.telecomsudparis.jnvm.api;
+package eu.telecomsudparis.jnvm;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
@@ -6,7 +6,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Assumptions;
 
-import eu.telecomsudparis.jnvm.api.PMem;
+import eu.telecomsudparis.jnvm.PMem;
 
 class PMemTests {
 

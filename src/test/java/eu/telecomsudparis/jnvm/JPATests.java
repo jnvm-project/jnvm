@@ -1,4 +1,4 @@
-package eu.telecomsudparis.jnvm.api.jpa;
+package eu.telecomsudparis.jnvm.jpa;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;

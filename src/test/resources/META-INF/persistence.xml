@@ -4,9 +4,9 @@
 
     <persistence-unit name="testJPA">
         <description>Persistence Unit for JUnit JPA tests</description>
-        <provider>eu.telecomsudparis.jnvm.api.jpa.JNVMPersistenceProvider</provider>
+        <provider>eu.telecomsudparis.jnvm.jpa.JNVMPersistenceProvider</provider>
 
-        <class>eu.telecomsudparis.jnvm.api.jpa.SampleObject</class>
+        <class>eu.telecomsudparis.jnvm.jpa.SampleObject</class>
         <exclude-unlisted-classes/>
 
         <!--

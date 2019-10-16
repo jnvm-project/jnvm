@@ -1,7 +1,7 @@
-package eu.telecomsudparis.jnvm.api.jpa;
+package eu.telecomsudparis.jnvm.jpa;
 
-import eu.telecomsudparis.jnvm.api.PMemPool;
-import eu.telecomsudparis.jnvm.api.util.persistent.PersistentHashMap;
+import eu.telecomsudparis.jnvm.PMemPool;
+import eu.telecomsudparis.jnvm.util.persistent.PersistentHashMap;
 
 import java.util.Map;
 import java.util.List;

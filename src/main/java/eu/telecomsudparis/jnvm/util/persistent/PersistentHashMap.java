@@ -1,4 +1,4 @@
-package eu.telecomsudparis.jnvm.api.util.persistent;
+package eu.telecomsudparis.jnvm.util.persistent;
 
 import java.io.Serializable;
 import java.util.Set;
@@ -7,7 +7,7 @@ import java.util.HashMap;
 import java.util.Collection;
 import java.util.AbstractMap;
 
-import eu.telecomsudparis.jnvm.api.PMemPool;
+import eu.telecomsudparis.jnvm.PMemPool;
 import net.bramp.unsafe.UnsafeHelper;
 
 import java.io.ByteArrayInputStream;

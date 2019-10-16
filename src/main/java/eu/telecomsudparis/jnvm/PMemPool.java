@@ -1,6 +1,6 @@
-package eu.telecomsudparis.jnvm.api;
+package eu.telecomsudparis.jnvm;
 
-import eu.telecomsudparis.jnvm.api.PMem;
+import eu.telecomsudparis.jnvm.PMem;
 
 public class PMemPool {
 

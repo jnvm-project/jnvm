@@ -54,7 +54,7 @@ static void free_pmem_root(void *addr, size_t length) {
     close(fd);
 }
 
-JNIEXPORT jlong JNICALL Java_eu_telecomsudparis_jnvm_api_PMem_openPmemRoot
+JNIEXPORT jlong JNICALL Java_eu_telecomsudparis_jnvm_PMem_openPmemRoot
         (JNIEnv *env, jobject jobj, jstring jpath, jlong jsize) {
     const char *path = NULL;
     char *root = NULL;
@@ -68,7 +68,7 @@ JNIEXPORT jlong JNICALL Java_eu_telecomsudparis_jnvm_api_PMem_openPmemRoot
     return (jlong) root;
 }
 
-JNIEXPORT void JNICALL Java_eu_telecomsudparis_jnvm_api_PMem_freePmemRoot
+JNIEXPORT void JNICALL Java_eu_telecomsudparis_jnvm_PMem_freePmemRoot
         (JNIEnv *env, jobject jobj, jlong jaddr, jlong jsize) {
     free_pmem_root((void *) jaddr, jsize);
 }

@@ -1,4 +1,4 @@
-package eu.telecomsudparis.jnvm.api;
+package eu.telecomsudparis.jnvm;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Order;
@@ -9,7 +9,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Assumptions;
 
-import eu.telecomsudparis.jnvm.api.PMemPool;
+import eu.telecomsudparis.jnvm.PMemPool;
 
 @TestMethodOrder(OrderAnnotation.class)
 class PMemPoolTests {

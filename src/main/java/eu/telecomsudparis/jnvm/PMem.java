@@ -1,4 +1,4 @@
-package eu.telecomsudparis.jnvm.api;
+package eu.telecomsudparis.jnvm;
 
 import java.lang.UnsatisfiedLinkError;
 import java.lang.ExceptionInInitializerError;

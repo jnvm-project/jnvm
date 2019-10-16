@@ -1,4 +1,4 @@
-package eu.telecomsudparis.jnvm.api.util.persistent;
+package eu.telecomsudparis.jnvm.util.persistent;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Order;
@@ -9,9 +9,9 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Assumptions;
 
-import eu.telecomsudparis.jnvm.api.PMemPool;
-import eu.telecomsudparis.jnvm.api.util.persistent.PersistentHashMap;
-import eu.telecomsudparis.jnvm.api.jpa.SampleObject;
+import eu.telecomsudparis.jnvm.PMemPool;
+import eu.telecomsudparis.jnvm.util.persistent.PersistentHashMap;
+import eu.telecomsudparis.jnvm.jpa.SampleObject;
 
 @TestMethodOrder(OrderAnnotation.class)
 class PMemPoolTests {

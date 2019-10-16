@@ -103,7 +103,7 @@
 
         <javahIncludes>
           <javahInclude>
-            <className>eu.telecomsudparis.jnvm.api.PMem</className>
+            <className>eu.telecomsudparis.jnvm.PMem</className>
             <headerName>PMem.h</headerName>
           </javahInclude>
         </javahIncludes>

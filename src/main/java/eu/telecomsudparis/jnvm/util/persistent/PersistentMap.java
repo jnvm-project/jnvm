@@ -1,4 +1,4 @@
-package eu.telecomsudparis.jnvm.api.util.persistent;
+package eu.telecomsudparis.jnvm.util.persistent;
 
 import java.util.Map;
 
