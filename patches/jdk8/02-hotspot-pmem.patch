@@ -1,0 +1,567 @@
+diff -r 43db5c16e4f2 -r b0c3c61cfe53 src/cpu/x86/vm/assembler_x86.cpp
+--- a/src/cpu/x86/vm/assembler_x86.cpp	Tue Sep 17 14:49:35 2019 +0200
++++ b/src/cpu/x86/vm/assembler_x86.cpp	Tue Sep 17 14:50:28 2019 +0200
+@@ -1658,6 +1658,14 @@
+   emit_int8((unsigned char)0xF0);
+ }
+
++// Emit sfence instruction
++void Assembler::sfence() {
++  NOT_LP64(assert(VM_Version::supports_sse2(), "unsupported");)
++  emit_int8(0x0F);
++  emit_int8((unsigned char)0xAE);
++  emit_int8((unsigned char)0xF8);
++}
++
+ void Assembler::mov(Register dst, Register src) {
+   LP64_ONLY(movq(dst, src)) NOT_LP64(movl(dst, src));
+ }
+@@ -5081,6 +5089,24 @@
+   emit_operand(rdi, adr);
+ }
+
++void Assembler::clflushopt(Address adr) {
++  assert(VM_Version::supports_clflushopt(), "clflushopt not supported");
++  emit_int8(0x66);
++  prefix(adr);
++  emit_int8(0x0F);
++  emit_int8((unsigned char)0xAE);
++  emit_operand(rdi, adr);
++}
++
++void Assembler::clwb(Address adr) {
++  assert(VM_Version::supports_clwb(), "clwb not supported");
++  emit_int8(0x66);
++  prefix(adr);
++  emit_int8(0x0F);
++  emit_int8((unsigned char)0xAE);
++  emit_operand(rsi, adr);
++}
++
+ void Assembler::cmovq(Condition cc, Register dst, Register src) {
+   int encode = prefixq_and_encode(dst->encoding(), src->encoding());
+   emit_int8(0x0F);
+diff -r 43db5c16e4f2 -r b0c3c61cfe53 src/cpu/x86/vm/assembler_x86.hpp
+--- a/src/cpu/x86/vm/assembler_x86.hpp	Tue Sep 17 14:49:35 2019 +0200
++++ b/src/cpu/x86/vm/assembler_x86.hpp	Tue Sep 17 14:50:28 2019 +0200
+@@ -976,6 +976,8 @@
+   void cld();
+
+   void clflush(Address adr);
++  void clflushopt(Address adr);
++  void clwb(Address adr);
+
+   void cmovl(Condition cc, Register dst, Register src);
+   void cmovl(Condition cc, Register dst, Address src);
+@@ -1307,6 +1309,7 @@
+   }
+
+   void mfence();
++  void sfence();
+
+   // Moves
+
+diff -r 43db5c16e4f2 -r b0c3c61cfe53 src/cpu/x86/vm/macroAssembler_x86.cpp
+--- a/src/cpu/x86/vm/macroAssembler_x86.cpp	Tue Sep 17 14:49:35 2019 +0200
++++ b/src/cpu/x86/vm/macroAssembler_x86.cpp	Tue Sep 17 14:50:28 2019 +0200
+@@ -8540,6 +8540,34 @@
+   notl(crc); // ~c
+ }
+
++void MacroAssembler::pwb(Address line) {
++  assert(VM_Version::supports_clflush(), "should not reach here on 32-bit");
++  bool optimized = VM_Version::supports_clflushopt();
++  bool no_evict = VM_Version::supports_clwb();
++
++  if(no_evict)
++    clwb(line);
++  else if(optimized)
++    clflushopt(line);
++  else
++    clflush(line);
++}
++
++void MacroAssembler::pfence() {
++  assert(VM_Version::supports_clflush(), "should not reach here on 32-bit");
++  bool optimized = VM_Version::supports_clflushopt();
++  bool no_evict = VM_Version::supports_clwb();
++
++  //only clwb and clflushopt are ordered with sfence
++  if(optimized || no_evict)
++    sfence();
++}
++
++void MacroAssembler::psync() {
++  //pcommit is deprecated, same implementation as pfence on x86
++  pfence();
++}
++
+ #undef BIND
+ #undef BLOCK_COMMENT
+
+diff -r 43db5c16e4f2 -r b0c3c61cfe53 src/cpu/x86/vm/macroAssembler_x86.hpp
+--- a/src/cpu/x86/vm/macroAssembler_x86.hpp	Tue Sep 17 14:49:35 2019 +0200
++++ b/src/cpu/x86/vm/macroAssembler_x86.hpp	Tue Sep 17 14:50:28 2019 +0200
+@@ -1278,6 +1278,10 @@
+
+ #undef VIRTUAL
+
++  void pwb(Address line);
++  void pfence();
++  void psync();
++
+ };
+
+ /**
+diff -r 43db5c16e4f2 -r b0c3c61cfe53 src/cpu/x86/vm/stubGenerator_x86_64.cpp
+--- a/src/cpu/x86/vm/stubGenerator_x86_64.cpp	Tue Sep 17 14:49:35 2019 +0200
++++ b/src/cpu/x86/vm/stubGenerator_x86_64.cpp	Tue Sep 17 14:50:28 2019 +0200
+@@ -2803,6 +2803,48 @@
+     return start;
+   }
+
++  address generate_pwb() {
++    const Register src = c_rarg0;
++
++    __ align(CodeEntryAlignment);
++    StubCodeMark mark(this, "StubRoutines", "_pwb");
++
++    address start = __ pc();
++    __ enter();
++    const Address line(src, 0);
++    __ pwb(line);
++    __ leave();
++    __ ret(0);
++
++    return start;
++  }
++
++  address generate_pfence() {
++    __ align(CodeEntryAlignment);
++    StubCodeMark mark(this, "StubRoutines", "_pfence");
++
++    address start = __ pc();
++    __ enter();
++    __ pfence();
++    __ leave();
++    __ ret(0);
++
++    return start;
++  }
++
++  address generate_psync() {
++    __ align(CodeEntryAlignment);
++    StubCodeMark mark(this, "StubRoutines", "_psync");
++
++    address start = __ pc();
++    __ enter();
++    __ psync();
++    __ leave();
++    __ ret(0);
++
++    return start;
++  }
++
+   void generate_arraycopy_stubs() {
+     address entry;
+     address entry_jbyte_arraycopy;
+@@ -4062,6 +4104,11 @@
+     // support for verify_oop (must happen after universe_init)
+     StubRoutines::_verify_oop_subroutine_entry = generate_verify_oop();
+
++    // data cache line write back
++    StubRoutines::_pwb = generate_pwb();
++    StubRoutines::_pfence = generate_pfence();
++    StubRoutines::_psync = generate_psync();
++
+     // arraycopy stubs used by compilers
+     generate_arraycopy_stubs();
+
+diff -r 43db5c16e4f2 -r b0c3c61cfe53 src/cpu/x86/vm/vm_version_x86.cpp
+--- a/src/cpu/x86/vm/vm_version_x86.cpp	Tue Sep 17 14:49:35 2019 +0200
++++ b/src/cpu/x86/vm/vm_version_x86.cpp	Tue Sep 17 14:50:28 2019 +0200
+@@ -460,6 +460,9 @@
+   guarantee(_cpuid_info.std_cpuid1_ebx.bits.clflush_size == 8, "such clflush size is not supported");
+ #endif
+
++  //TODO ensure this is right for all CPUs
++  _data_cache_line_flush_size = _cpuid_info.std_cpuid1_ebx.bits.clflush_size * 8;
++
+   // If the OS doesn't support SSE, we can't use this feature even if the HW does
+   if (!os::supports_sse())
+     _cpuFeatures &= ~(CPU_SSE|CPU_SSE2|CPU_SSE3|CPU_SSSE3|CPU_SSE4A|CPU_SSE4_1|CPU_SSE4_2);
+diff -r 43db5c16e4f2 -r b0c3c61cfe53 src/cpu/x86/vm/vm_version_x86.hpp
+--- a/src/cpu/x86/vm/vm_version_x86.hpp	Tue Sep 17 14:49:35 2019 +0200
++++ b/src/cpu/x86/vm/vm_version_x86.hpp	Tue Sep 17 14:50:28 2019 +0200
+@@ -211,7 +211,10 @@
+                    rtm  : 1,
+                         : 7,
+                    adx  : 1,
+-                        : 12;
++                        : 3,
++             clflushopt : 1,
++                   clwb : 1,
++                        : 7;
+     } bits;
+   };
+
+@@ -263,7 +266,9 @@
+     CPU_BMI1   = (1 << 22),
+     CPU_BMI2   = (1 << 23),
+     CPU_RTM    = (1 << 24),  // Restricted Transactional Memory instructions
+-    CPU_ADX    = (1 << 25)
++    CPU_ADX    = (1 << 25),
++    CPU_CLWB   = (1 << 26),  // PMem instructions
++    CPU_CLFLUSHOPT = (1 << 27)
+   } cpuFeatureFlags;
+
+   enum {
+@@ -455,6 +460,10 @@
+       result |= CPU_CLMUL;
+     if (_cpuid_info.sef_cpuid7_ebx.bits.rtm != 0)
+       result |= CPU_RTM;
++    if (_cpuid_info.sef_cpuid7_ebx.bits.clflushopt != 0)
++      result |= CPU_CLFLUSHOPT;
++    if (_cpuid_info.sef_cpuid7_ebx.bits.clwb != 0)
++      result |= CPU_CLWB;
+
+     // AMD features.
+     if (is_amd()) {
+@@ -637,6 +646,8 @@
+   static bool supports_bmi1()     { return (_cpuFeatures & CPU_BMI1) != 0; }
+   static bool supports_bmi2()     { return (_cpuFeatures & CPU_BMI2) != 0; }
+   static bool supports_adx()     { return (_cpuFeatures & CPU_ADX) != 0; }
++  static bool supports_clwb()     { return (_cpuFeatures & CPU_CLWB) != 0; }
++  static bool supports_clflushopt() { return (_cpuFeatures & CPU_CLFLUSHOPT) != 0; }
+   // Intel features
+   static bool is_intel_family_core() { return is_intel() &&
+                                        extended_cpu_family() == CPU_FAMILY_INTEL_CORE; }
+diff -r 43db5c16e4f2 -r b0c3c61cfe53 src/cpu/x86/vm/x86_64.ad
+--- a/src/cpu/x86/vm/x86_64.ad	Tue Sep 17 14:49:35 2019 +0200
++++ b/src/cpu/x86/vm/x86_64.ad	Tue Sep 17 14:50:28 2019 +0200
+@@ -6038,6 +6038,40 @@
+   ins_pipe(pipe_slow); // XXX
+ %}
+
++//----------PWB Instructions---------------------------------------------------
++instruct pwb(indirect addr) %{
++  match(Pwb addr);
++
++  ins_cost(100);
++  format %{"pwb $addr" %}
++  ins_encode %{
++    __ pwb(Address($addr$$base$$Register, 0));
++  %}
++  ins_pipe(pipe_slow); // XXX
++%}
++
++instruct pfence() %{
++  match(Pfence);
++
++  ins_cost(100);
++  format %{"pfence" %}
++  ins_encode %{
++    __ pfence();
++  %}
++  ins_pipe(pipe_slow); // XXX
++%}
++
++instruct psync() %{
++  match(Psync);
++
++  ins_cost(100);
++  format %{"psync" %}
++  ins_encode %{
++    __ psync();
++  %}
++  ins_pipe(pipe_slow); // XXX
++%}
++
+ //----------BSWAP Instructions-------------------------------------------------
+ instruct bytes_reverse_int(rRegI dst) %{
+   match(Set dst (ReverseBytesI dst));
+diff -r 43db5c16e4f2 -r b0c3c61cfe53 src/share/vm/adlc/formssel.cpp
+--- a/src/share/vm/adlc/formssel.cpp	Tue Sep 17 14:49:35 2019 +0200
++++ b/src/share/vm/adlc/formssel.cpp	Tue Sep 17 14:50:28 2019 +0200
+@@ -3495,6 +3495,12 @@
+       strcmp(_opType,"PrefetchWrite")==0 ||
+       strcmp(_opType,"PrefetchAllocation")==0 )
+     return 1;
++  if( strcmp(_opType, "Pwb")==0 )
++    return 1;
++  if( strcmp(_opType, "Pfence")==0 )
++    return 1;
++  if( strcmp(_opType, "Psync")==0 )
++    return 1;
+   if( _lChild ) {
+     const char *opType = _lChild->_opType;
+     for( int i=0; i<cnt; i++ )
+diff -r 43db5c16e4f2 -r b0c3c61cfe53 src/share/vm/classfile/vmSymbols.hpp
+--- a/src/share/vm/classfile/vmSymbols.hpp	Tue Sep 17 14:49:35 2019 +0200
++++ b/src/share/vm/classfile/vmSymbols.hpp	Tue Sep 17 14:50:28 2019 +0200
+@@ -490,6 +490,7 @@
+   template(byte_array_void_signature,                 "([B)V")                                                    \
+   template(char_array_void_signature,                 "([C)V")                                                    \
+   template(int_int_void_signature,                    "(II)V")                                                    \
++  template(long_void_signature,                       "(J)V")                                                     \
+   template(long_long_void_signature,                  "(JJ)V")                                                    \
+   template(void_classloader_signature,                "()Ljava/lang/ClassLoader;")                                \
+   template(void_object_signature,                     "()Ljava/lang/Object;")                                     \
+@@ -877,6 +878,12 @@
+   /* support for sun.misc.Unsafe */                                                                                     \
+   do_class(sun_misc_Unsafe,               "sun/misc/Unsafe")                                                            \
+                                                                                                                         \
++  do_intrinsic(_pwb,                      sun_misc_Unsafe,        pwb_name, long_void_signature, F_RN)                  \
++   do_name(     pwb_name,                                         "pwb")                                                \
++  do_intrinsic(_pfence,                   sun_misc_Unsafe,        pfence_name, void_method_signature, F_RN)             \
++   do_name(     pfence_name,                                      "pfence")                                             \
++  do_intrinsic(_psync,                    sun_misc_Unsafe,        psync_name, void_method_signature, F_RN)              \
++   do_name(     psync_name,                                       "psync")                                              \
+   do_intrinsic(_allocateInstance,         sun_misc_Unsafe,        allocateInstance_name, allocateInstance_signature, F_RN) \
+    do_name(     allocateInstance_name,                           "allocateInstance")                                    \
+    do_signature(allocateInstance_signature,   "(Ljava/lang/Class;)Ljava/lang/Object;")                                  \
+diff -r 43db5c16e4f2 -r b0c3c61cfe53 src/share/vm/opto/classes.hpp
+--- a/src/share/vm/opto/classes.hpp	Tue Sep 17 14:49:35 2019 +0200
++++ b/src/share/vm/opto/classes.hpp	Tue Sep 17 14:50:28 2019 +0200
+@@ -326,3 +326,6 @@
+ macro(ExtractL)
+ macro(ExtractF)
+ macro(ExtractD)
++macro(Pwb)
++macro(Pfence)
++macro(Psync)
+diff -r 43db5c16e4f2 -r b0c3c61cfe53 src/share/vm/opto/library_call.cpp
+--- a/src/share/vm/opto/library_call.cpp	Tue Sep 17 14:49:35 2019 +0200
++++ b/src/share/vm/opto/library_call.cpp	Tue Sep 17 14:50:28 2019 +0200
+@@ -235,6 +235,9 @@
+   static bool klass_needs_init_guard(Node* kls);
+   bool inline_unsafe_allocate();
+   bool inline_unsafe_copyMemory();
++  bool inline_unsafe_pwb();
++  bool inline_unsafe_pfence();
++  bool inline_unsafe_psync();
+   bool inline_native_currentThread();
+ #ifdef TRACE_HAVE_INTRINSICS
+   bool inline_native_classID();
+@@ -888,6 +891,9 @@
+   case vmIntrinsics::_nanoTime:                 return inline_native_time_funcs(CAST_FROM_FN_PTR(address, os::javaTimeNanos), "nanoTime");
+   case vmIntrinsics::_allocateInstance:         return inline_unsafe_allocate();
+   case vmIntrinsics::_copyMemory:               return inline_unsafe_copyMemory();
++  case vmIntrinsics::_pwb:                      return inline_unsafe_pwb();
++  case vmIntrinsics::_pfence:                   return inline_unsafe_pfence();
++  case vmIntrinsics::_psync:                    return inline_unsafe_psync();
+   case vmIntrinsics::_newArray:                 return inline_native_newArray();
+   case vmIntrinsics::_getLength:                return inline_native_getLength();
+   case vmIntrinsics::_copyOf:                   return inline_array_copyOf(false);
+@@ -3211,6 +3217,35 @@
+   return !ik->is_initialized();
+ }
+
++//----------------------------inline_unsafe_pwb--------------------------------
++// public native Object sun.misc.Unsafe.pwb(long address);
++bool LibraryCallKit::inline_unsafe_pwb() {
++  null_check_receiver();  // null-check, then ignore
++  Node *addr = argument(1);
++  addr = _gvn.transform(new (C) CastX2PNode(addr));
++  Node *flush = _gvn.transform(new (C) PwbNode(control(), memory(TypeRawPtr::BOTTOM), addr));
++  set_memory(flush, TypeRawPtr::BOTTOM);
++  return true;
++}
++
++//----------------------------inline_unsafe_pfence-----------------------------
++// public native Object sun.misc.Unsafe.pfence();
++bool LibraryCallKit::inline_unsafe_pfence() {
++  null_check_receiver();  // null-check, then ignore
++  Node *fence = _gvn.transform(new (C) PfenceNode(control(), memory(TypeRawPtr::BOTTOM)));
++  set_memory(fence, TypeRawPtr::BOTTOM);
++  return true;
++}
++
++//----------------------------inline_unsafe_psync------------------------------
++// public native Object sun.misc.Unsafe.psync();
++bool LibraryCallKit::inline_unsafe_psync() {
++  null_check_receiver();  // null-check, then ignore
++  Node *sync = _gvn.transform(new (C) PsyncNode(control(), memory(TypeRawPtr::BOTTOM)));
++  set_memory(sync, TypeRawPtr::BOTTOM);
++  return true;
++}
++
+ //----------------------------inline_unsafe_allocate---------------------------
+ // public native Object sun.misc.Unsafe.allocateInstance(Class<?> cls);
+ bool LibraryCallKit::inline_unsafe_allocate() {
+diff -r 43db5c16e4f2 -r b0c3c61cfe53 src/share/vm/opto/memnode.hpp
+--- a/src/share/vm/opto/memnode.hpp	Tue Sep 17 14:49:35 2019 +0200
++++ b/src/share/vm/opto/memnode.hpp	Tue Sep 17 14:50:28 2019 +0200
+@@ -1520,4 +1520,38 @@
+   virtual const Type *bottom_type() const { return ( AllocatePrefetchStyle == 3 ) ? Type::MEMORY : Type::ABIO; }
+ };
+
++// pwb node for guaranteeing writeback of cache line at address to persistent
++// memory
++class PwbNode : public Node {
++public:
++  PwbNode(Node *ctrl, Node *mem, Node *addr) : Node(ctrl, mem, addr) {}
++  virtual int Opcode() const;
++  virtual uint ideal_reg() const { return NotAMachineReg; }
++  virtual uint match_edge(uint idx) const { return idx==2; }
++  virtual const TypePtr *adr_type() const { return TypeRawPtr::BOTTOM; }
++  virtual const Type *bottom_type() const { return Type::MEMORY; }
++};
++
++// pfence node to order cache line writebacks
++class PfenceNode : public Node {
++public:
++  PfenceNode(Node *ctrl, Node *mem) : Node(ctrl, mem) {}
++  virtual int Opcode() const;
++  virtual uint ideal_reg() const { return NotAMachineReg; }
++  virtual uint match_edge(uint idx) const { return false; }
++  virtual const TypePtr *adr_type() const { return TypeRawPtr::BOTTOM; }
++  virtual const Type *bottom_type() const { return Type::MEMORY; }
++};
++
++// psync node to synchronize cache line writebacks
++class PsyncNode : public Node {
++public:
++  PsyncNode(Node *ctrl, Node *mem) : Node(ctrl, mem) {}
++  virtual int Opcode() const;
++  virtual uint ideal_reg() const { return NotAMachineReg; }
++  virtual uint match_edge(uint idx) const { return false; }
++  virtual const TypePtr *adr_type() const { return TypeRawPtr::BOTTOM; }
++  virtual const Type *bottom_type() const { return Type::MEMORY; }
++};
++
+ #endif // SHARE_VM_OPTO_MEMNODE_HPP
+diff -r 43db5c16e4f2 -r b0c3c61cfe53 src/share/vm/prims/unsafe.cpp
+--- a/src/share/vm/prims/unsafe.cpp	Tue Sep 17 14:49:35 2019 +0200
++++ b/src/share/vm/prims/unsafe.cpp	Tue Sep 17 14:50:28 2019 +0200
+@@ -35,6 +35,7 @@
+ #include "runtime/interfaceSupport.hpp"
+ #include "runtime/prefetch.inline.hpp"
+ #include "runtime/orderAccess.inline.hpp"
++#include "runtime/sharedRuntime.hpp"
+ #include "runtime/reflection.hpp"
+ #include "runtime/synchronizer.hpp"
+ #include "services/threadService.hpp"
+@@ -1343,6 +1344,26 @@
+   Prefetch::write(addr, (intx)offset);
+ UNSAFE_END
+
++UNSAFE_ENTRY(void, Unsafe_PWB(JNIEnv *env, jobject unsafe, jlong line))
++  void *a = addr_from_java(line);
++  void (*pwb)(void *) = (void (*)(void *)) StubRoutines::pwb();
++  (*pwb)(a);
++UNSAFE_END
++
++UNSAFE_ENTRY(void, Unsafe_PFENCE(JNIEnv *env, jobject unsafe))
++  void (*pfence)(void) = (void (*)(void)) StubRoutines::pfence();
++  (*pfence)();
++UNSAFE_END
++
++UNSAFE_ENTRY(void, Unsafe_PSYNC(JNIEnv *env, jobject unsafe))
++  void (*psync)(void) = (void (*)(void)) StubRoutines::psync();
++  (*psync)();
++UNSAFE_END
++
++UNSAFE_ENTRY(jint, Unsafe_DataCacheLineFlushSize(JNIEnv *env, jobject unsafe))
++  return (jint) VM_Version::data_cache_line_flush_size();
++UNSAFE_END
++
+
+ /// JVM_RegisterUnsafeMethods
+
+@@ -1682,6 +1703,13 @@
+     {CC "fullFence",          CC "()V",                    FN_PTR(Unsafe_FullFence)},
+ };
+
++JNINativeMethod pmem_methods[] = {
++    {CC "pwb",                    CC "(J)V",                   FN_PTR(Unsafe_PWB)},
++    {CC "pfence",                 CC "()V",                    FN_PTR(Unsafe_PFENCE)},
++    {CC "psync",                  CC "()V",                    FN_PTR(Unsafe_PSYNC)},
++    {CC "dataCacheLineFlushSize", CC "()I",                    FN_PTR(Unsafe_DataCacheLineFlushSize)},
++};
++
+ #undef CC
+ #undef FN_PTR
+
+@@ -1781,5 +1809,8 @@
+
+     // Fence methods
+     register_natives("1.8 fence methods", env, unsafecls, fence_methods, sizeof(fence_methods)/sizeof(JNINativeMethod));
++
++    // PMem methods
++    register_natives("1.8 pmem methods", env, unsafecls, pmem_methods, sizeof(pmem_methods)/sizeof(JNINativeMethod));
+   }
+ JVM_END
+diff -r 43db5c16e4f2 -r b0c3c61cfe53 src/share/vm/runtime/stubRoutines.cpp
+--- a/src/share/vm/runtime/stubRoutines.cpp	Tue Sep 17 14:49:35 2019 +0200
++++ b/src/share/vm/runtime/stubRoutines.cpp	Tue Sep 17 14:50:28 2019 +0200
+@@ -107,6 +107,10 @@
+
+ address StubRoutines::_zero_aligned_words = CAST_FROM_FN_PTR(address, Copy::zero_to_words);
+
++address StubRoutines::_pwb    = NULL;
++address StubRoutines::_pfence = NULL;
++address StubRoutines::_psync  = NULL;
++
+ address StubRoutines::_checkcast_arraycopy               = NULL;
+ address StubRoutines::_checkcast_arraycopy_uninit        = NULL;
+ address StubRoutines::_unsafe_arraycopy                  = NULL;
+diff -r 43db5c16e4f2 -r b0c3c61cfe53 src/share/vm/runtime/stubRoutines.hpp
+--- a/src/share/vm/runtime/stubRoutines.hpp	Tue Sep 17 14:49:35 2019 +0200
++++ b/src/share/vm/runtime/stubRoutines.hpp	Tue Sep 17 14:50:28 2019 +0200
+@@ -178,6 +178,11 @@
+   static address _arrayof_jlong_disjoint_arraycopy;
+   static address _arrayof_oop_disjoint_arraycopy, _arrayof_oop_disjoint_arraycopy_uninit;
+
++  // data cache line write back
++  static address _pwb;
++  static address _pfence;
++  static address _psync;
++
+   // these are recommended but optional:
+   static address _checkcast_arraycopy, _checkcast_arraycopy_uninit;
+   static address _unsafe_arraycopy;
+@@ -342,6 +347,10 @@
+     return dest_uninitialized ? _arrayof_oop_disjoint_arraycopy_uninit : _arrayof_oop_disjoint_arraycopy;
+   }
+
++  static address pwb() { return _pwb; }
++  static address pfence() { return _pfence; }
++  static address psync() { return _psync; }
++
+   static address checkcast_arraycopy(bool dest_uninitialized = false) {
+     return dest_uninitialized ? _checkcast_arraycopy_uninit : _checkcast_arraycopy;
+   }
+diff -r 43db5c16e4f2 -r b0c3c61cfe53 src/share/vm/runtime/vm_version.cpp
+--- a/src/share/vm/runtime/vm_version.cpp	Tue Sep 17 14:49:35 2019 +0200
++++ b/src/share/vm/runtime/vm_version.cpp	Tue Sep 17 14:50:28 2019 +0200
+@@ -51,6 +51,7 @@
+ bool Abstract_VM_Version::_supports_atomic_getadd8 = false;
+ unsigned int Abstract_VM_Version::_logical_processors_per_package = 1U;
+ unsigned int Abstract_VM_Version::_L1_data_cache_line_size = 0;
++unsigned int Abstract_VM_Version::_data_cache_line_flush_size = 0;
+ int Abstract_VM_Version::_reserve_for_allocation_prefetch = 0;
+
+ #ifndef HOTSPOT_RELEASE_VERSION
+diff -r 43db5c16e4f2 -r b0c3c61cfe53 src/share/vm/runtime/vm_version.hpp
+--- a/src/share/vm/runtime/vm_version.hpp	Tue Sep 17 14:49:35 2019 +0200
++++ b/src/share/vm/runtime/vm_version.hpp	Tue Sep 17 14:50:28 2019 +0200
+@@ -43,6 +43,7 @@
+   static bool         _supports_atomic_getadd8;
+   static unsigned int _logical_processors_per_package;
+   static unsigned int _L1_data_cache_line_size;
++  static unsigned int _data_cache_line_flush_size;
+   static int          _vm_major_version;
+   static int          _vm_minor_version;
+   static int          _vm_build_number;
+@@ -119,6 +120,10 @@
+     return _L1_data_cache_line_size;
+   }
+
++  static unsigned int data_cache_line_flush_size() {
++    return _data_cache_line_flush_size;
++  }
++
+   // Need a space at the end of TLAB for prefetch instructions
+   // which may fault when accessing memory outside of heap.
+   static int reserve_for_allocation_prefetch() {

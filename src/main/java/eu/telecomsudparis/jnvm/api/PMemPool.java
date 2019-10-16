@@ -105,16 +105,16 @@ public class PMemPool {
         assertLoaded();
 
         unsafe.putLong( size_addr, size );
-        //TODO CLWB
-        //TODO SFENCE
+        unsafe.pwb( size_addr );
+        unsafe.psync();
     }
 
     public void setPosition(Long position) {
         assertLoaded();
 
         unsafe.putLong( position_addr, position );
-        //TODO CLWB
-        //TODO SFENCE
+        unsafe.pwb( position_addr );
+        unsafe.psync();
     }
 
     //Data manipulation methods
@@ -127,18 +127,19 @@ public class PMemPool {
     }
 
     private void putRaw(byte[] src, long offset, long bytes) {
+        //TODO Ensure flushes are done for every 256B copied.
         unsafe.copyMemory( src, arrayBaseOffset,
                            null, base_addr + offset, bytes );
-        //TODO CLWB each cache line
-        //     No need for SFENCE since getAndAddLong() should induce a lock
-        //     instruction which would be ordered with previous CLWB.
+        unsafe.writebackMemory( base_addr + offset, bytes );
+        unsafe.pfence();
 
-        unsafe.getAndAddLong( null, size_addr, 1L );
-        //TODO CLWB
+        //TODO Add support for concurrency
+        unsafe.putLong( size_addr, unsafe.getLong( size_addr ) + 1 );
+        unsafe.pwb( size_addr );
 
         //TODO Set block header validity bit
         //TODO CLWB
-        //TODO SFENCE
+        unsafe.psync();
     }
 
     private void putRaw(byte[] src, long offset) {
@@ -154,8 +155,11 @@ public class PMemPool {
     public int put(byte[] src) {
         assertLoaded();
 
-        long position = unsafe.getAndAddLong( null, position_addr, BLOCK_SIZE );
-        //TODO CLWB
+        //TODO Add support for concurrency
+        long position = unsafe.getLong( position_addr );
+        unsafe.putLong( position_addr, position + BLOCK_SIZE );
+        unsafe.pwb( position_addr );
+        unsafe.pfence();
 
         putRaw( src, position );
 
@@ -181,24 +185,28 @@ public class PMemPool {
     public void get(byte[] dst) {
         assertLoaded();
 
-        long position = unsafe.getAndAddLong( null, position_addr, BLOCK_SIZE );
-        //TODO CLWB
+        //TODO Add support for concurrency
+        long position = unsafe.getLong( position_addr );
+        unsafe.putLong( position_addr, position + BLOCK_SIZE );
+        unsafe.pwb( position_addr );
+        unsafe.pfence();
 
         getRaw( dst, position );
     }
 
     private void removeRaw(long offset) {
+        //TODO Ensure flushes are done for every 256B copied.
         unsafe.setMemory( base_addr + offset, BLOCK_SIZE, (byte) 0 );
-        //TODO CLWB each cache line
-        //     No need for SFENCE since getAndAddLong() should induce a lock
-        //     instruction which would be ordered with previous CLWB.
+        unsafe.writebackMemory( base_addr + offset, BLOCK_SIZE );
+        unsafe.pfence();
 
-        unsafe.getAndAddLong( null, size_addr, -1L );
-        //TODO CLWB
+        //TODO Add support for concurrency
+        unsafe.putLong( size_addr, unsafe.getLong( size_addr ) - 1 );
+        unsafe.pwb( size_addr );
 
         //TODO Set block header validity bit
         //TODO CLWB
-        //TODO SFENCE
+        unsafe.psync();
     }
 
     public void remove(int index) {
@@ -217,9 +225,10 @@ public class PMemPool {
         assertLoaded();
 
         if( erase ) {
+            //TODO writeback as memory is touched to ensure sequential writes
             unsafe.setMemory( address, limit, (byte) 0 );
-            //TODO CLWB each cache line
-            //TODO SFENCE
+            unsafe.writebackMemory( address, limit );
+            unsafe.psync();
         } else {
             setSize( 0L );
             setPosition( 0L );

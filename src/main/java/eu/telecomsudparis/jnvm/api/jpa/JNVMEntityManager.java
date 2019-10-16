@@ -29,7 +29,7 @@ public class JNVMEntityManager implements EntityManager {
     private EntityTransaction tx = new JNVMEntityTransaction();
     private boolean closed = false;
 
-    private static final String pmemFile = "/tmp/pMemEM";
+    private static final String pmemFile = "/pmem0/pMemEM";
     private static final long pmemPoolSize = 1*1024*1024*1024L;
     private PersistentHashMap<Object,Object> backend;
 

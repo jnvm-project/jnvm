@@ -1,0 +1,49 @@
+diff -r 3ef3348195ff src/share/classes/sun/misc/Unsafe.java
+--- a/src/share/classes/sun/misc/Unsafe.java	Fri Aug 09 00:11:13 2019 +0100
++++ b/src/share/classes/sun/misc/Unsafe.java	Tue Oct 01 14:21:35 2019 +0200
+@@ -1142,4 +1142,45 @@
+        throw new IllegalAccessError();
+     }
+
++    public static final long CACHE_LINE_FLUSH_SIZE = (long) theUnsafe.dataCacheLineFlushSize();
++    public static final long CACHE_LINE_MASK = ~(CACHE_LINE_FLUSH_SIZE - 1);
++
++    private native int dataCacheLineFlushSize();
++
++    /**
++     * Write back to persistent memory a block of memory
++     * one cache line at a time.
++     *
++     * @param address the start address of the memory block to be written back
++     * @param length the length of the memory block to be written back
++     * @since 1.8
++     */
++    public void writebackMemory(long address, long length) {
++        for( long line = address & CACHE_LINE_MASK;
++             line < address + length;
++             line += CACHE_LINE_FLUSH_SIZE )
++            pwb(line);
++    }
++
++    /**
++     * Ensure lack of reordering of persistent stores before the fence
++     * with load or stores after the fence.
++     * @since 1.8
++     */
++    public native void pfence();
++
++    /**
++     * Block until all preceding persistent stores operations have succeeded.
++     * @since 1.8
++     */
++    public native void psync();
++
++    /**
++     * Write back to persistent memory a single cache line.
++     *
++     * @param address the start address of the cache line to be written back
++     * @since 1.8
++     */
++    public native void pwb(long address);
++
+ }

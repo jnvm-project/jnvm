@@ -35,7 +35,18 @@ static char *open_pmem_root(const char *path, size_t length) {
             exit(EXIT_FAILURE);
         }
     }
-    return mmap(NULL, length, PROT_EXEC|PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
+    int flags = MAP_SHARED_VALIDATE | MAP_SYNC;
+    char *addr = mmap(NULL, length, PROT_READ|PROT_WRITE, flags, fd, 0);
+    if(addr == MAP_FAILED) {
+        int errnum = errno;
+        if(errnum == EOPNOTSUPP) {
+            flags = MAP_SHARED;
+            addr = mmap(NULL, length, PROT_READ|PROT_WRITE, flags, fd, 0);
+        } else {
+            perror("open_pmem_root: ");
+            exit(EXIT_FAILURE);
+        }
+    }
 }
 
 static void free_pmem_root(void *addr, size_t length) {

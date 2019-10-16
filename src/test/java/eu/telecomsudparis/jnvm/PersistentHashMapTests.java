@@ -16,7 +16,7 @@ import eu.telecomsudparis.jnvm.api.jpa.SampleObject;
 @TestMethodOrder(OrderAnnotation.class)
 class PMemPoolTests {
 
-    private final static String PMEM_FILE="/tmp/pMemTests";
+    private final static String PMEM_FILE="/pmem0/pMemTests";
     private final static long POOL_SIZE=1024*1024L;
 
     private final static int MULTI_PUT_LENGTH = 100;

@@ -109,6 +109,7 @@
         </javahIncludes>
 
         <javahOS>linux</javahOS>
+        <jdkIncludePath>${java.home}/include</jdkIncludePath>
 
         <sources>
           <source>
