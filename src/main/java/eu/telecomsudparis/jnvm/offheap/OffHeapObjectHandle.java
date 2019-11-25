@@ -68,6 +68,14 @@ public abstract class OffHeapObjectHandle {
         return unsafe.getLong( addressFromFieldOffset( fieldOffset ) );
     }
 
+    protected void setHandleField(long fieldOffset, OffHeapObjectHandle ohoh) {
+        setLongField( fieldOffset, ohoh.getOffset() );
+    }
+
+    protected OffHeapObjectHandle getHandleField(long fieldOffset) {
+        return OffHeap.instanceFromOffset( getLongField( fieldOffset ) );
+    }
+
     //Unsafe mechanics
     private static final sun.misc.Unsafe unsafe;
     static {
