@@ -2,9 +2,11 @@ package eu.telecomsudparis.jnvm.offheap;
 
 import java.util.LinkedList;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 
-public class MemoryAllocator {
+public class MemoryAllocator implements Iterable<MemoryBlockHandle> {
 
     //Transient
     private transient long offset = -1;
@@ -27,8 +29,7 @@ public class MemoryAllocator {
         MemoryAllocator allocator = new MemoryAllocator(offset, limit);
 
         //Reconstruct « reclaimed » and « mappings » datastructs
-        for(long i=0; i < allocator.top(); i += MemoryBlockHandle.size() ) {
-            MemoryBlockHandle block = new MemoryBlockHandle( offset + BASE + i );
+        for(MemoryBlockHandle block : allocator) {
             if( block.isValid() && block.hasNext() && block.next().isValid() ) {
                 //Invalidate when new version is ready but old was not dismissed
                 block.free();
@@ -115,6 +116,25 @@ public class MemoryAllocator {
 
     public long usedMemory() {
         return top();
+    }
+
+    //Iterable methods
+    public Iterator<MemoryBlockHandle> iterator() {
+        return new Iterator() {
+            long cursor = 0;
+            long increment = MemoryBlockHandle.size();
+            long end = MemoryAllocator.this.top();
+            public boolean hasNext() { return cursor < end; }
+            public MemoryBlockHandle next() {
+                if( hasNext() ) {
+                    MemoryBlockHandle block = new MemoryBlockHandle( offset + BASE + cursor );
+                    cursor += increment;
+                    return block;
+                } else {
+                    throw new NoSuchElementException();
+                }
+            }
+        };
     }
 
     //Unsafe mechanics
