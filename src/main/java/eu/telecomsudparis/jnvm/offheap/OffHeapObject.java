@@ -1,0 +1,35 @@
+package eu.telecomsudparis.jnvm.offheap;
+
+import eu.telecomsudparis.jnvm.offheap.OffHeap;
+
+
+public interface OffHeapObject {
+
+    long getOffset();
+    void attach(long offset);
+    void detach();
+    long size();
+
+    long addressFromFieldOffset(long fieldOffset);
+
+    //Data manipulation methods
+    default void setLongField(long fieldOffset, long value) {
+        unsafe.putLong( addressFromFieldOffset( fieldOffset ), value );
+    }
+
+    default long getLongField(long fieldOffset) {
+        return unsafe.getLong( addressFromFieldOffset( fieldOffset ) );
+    }
+
+    default void setHandleField(long fieldOffset, OffHeapObjectHandle ohoh) {
+        setLongField( fieldOffset, ohoh.getOffset() );
+    }
+
+    default OffHeapObjectHandle getHandleField(long fieldOffset) {
+        return OffHeap.instanceFromOffset( getLongField( fieldOffset ) );
+    }
+
+    //Unsafe mechanics
+    sun.misc.Unsafe unsafe = net.bramp.unsafe.UnsafeHelper.getUnsafe();
+
+}
