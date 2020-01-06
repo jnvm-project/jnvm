@@ -13,7 +13,7 @@ public class OffHeap {
 
     private transient static final MemoryPool pool;
     private transient static final MemoryAllocator allocator;
-    private transient static final HashMap<Long, OffHeapObjectHandle> instances;
+    private transient static final HashMap<Long, OffHeapObject> instances;
     private transient static final ArrayList<String> classes;
 
     static {
@@ -41,33 +41,33 @@ public class OffHeap {
     }
 
     //TODO implement classId to class pointer retrieval mechanism
-    private static <K extends OffHeapObjectHandle> Class<?> klazz(long classId) {
+    private static <K extends OffHeapObject> Class<?> klazz(long classId) {
         try {
             return Class.forName( classes.get( (int) classId ) );
         } catch(Exception e) {
         }
         return null;
     }
-    public static <K extends OffHeapObjectHandle> void registerClass(Class<K> klass) {
+    public static <K extends OffHeapObject> void registerClass(Class<K> klass) {
         classes.add( klass.getName() );
     }
     public static MemoryAllocator getAllocator() { return allocator; }
 
     //Constructor
-    public static <K extends OffHeapObjectHandle> K newInstance(K k) {
+    public static <K extends OffHeapObject> K newInstance(K k) {
         k.attach( allocator.allocateBlock().getOffset() );
         instances.put( k.getOffset(), k );
         return k;
     }
 
     //Reconstructor
-    public static <K extends OffHeapObjectHandle> K recInstance(K k, long offset) {
+    public static <K extends OffHeapObject> K recInstance(K k, long offset) {
         k.attach( allocator.blockFromOffset( offset ).getOffset() );
         instances.put( k.getOffset(), k );
         return k;
     }
 
-    public static <K extends OffHeapObjectHandle> K newInstance(MemoryBlockHandle block) {
+    public static <K extends OffHeapObject> K newInstance(MemoryBlockHandle block) {
         K k = null;
         try {
             k = (K) klazz( block.getKlass() ).newInstance();
@@ -79,7 +79,7 @@ public class OffHeap {
     }
 
     //TODO find a way to store ordinary object pointer in the off-heap
-    public static <K extends OffHeapObjectHandle> K instanceFromOffset(long offset) {
+    public static <K extends OffHeapObject> K instanceFromOffset(long offset) {
         K k = null;
         if( ( k = (K) instances.get( offset ) ) == null ) {
             //Lazy object pointer mapping initialization
@@ -88,7 +88,7 @@ public class OffHeap {
         return k;
     }
 
-    public static <K extends OffHeapObjectHandle> void deleteInstance(K k) {
+    public static <K extends OffHeapObject> void deleteInstance(K k) {
         allocator.freeMemory( k.getOffset(), k.size() );
         k.detach();
         instances.remove( k.getOffset() );
