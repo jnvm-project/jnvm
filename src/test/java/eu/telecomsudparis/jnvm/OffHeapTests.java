@@ -18,6 +18,7 @@ import eu.telecomsudparis.jnvm.jpa.OffHeapFourLongs;
 class OffHeapTests {
 
     private final static int MULTI_PUT_LENGTH = 100;
+    private final static String TEST_TEXT = "This string must be long enough to be held by multiple blocks so please don't blame me for typing useless text that won't ever be read by a single human - even if this code base were to be completely broken, no one would ever peek at such a unit test file with no purpose except displaying long strings of characters. Looks like this was long enough to be around 1KB, this should be enough to allocate multiple blocks of 256B each on test whether large objects may be used with this offheap framework";
 
     //Emulate OffHeap state logic to test OffHeap class
     private static class HeapStateUtils {
@@ -144,6 +145,43 @@ class OffHeapTests {
             HeapStateUtils.recordDeletedInstance( o, i );
             OffHeap.deleteInstance( o );
         }
+
+        Assertions.assertEquals( 0, OffHeap.getAllocator().size() );
+        Assertions.assertEquals( MULTI_PUT_LENGTH * MemoryBlockHandle.size(), OffHeap.getAllocator().usedMemory() );
+    }
+
+    @Test
+    @Order(6)
+    void newOffHeapString() {
+        Assumptions.assumeTrue( OffHeap.getAllocator().size() == 0 );
+
+        OffHeapString ohs = new OffHeapString( TEST_TEXT );
+        HeapStateUtils.offsets[0] = ohs.getOffset();
+
+        Assertions.assertEquals( 1280, OffHeap.getAllocator().size() );
+        Assertions.assertEquals( MULTI_PUT_LENGTH * MemoryBlockHandle.size(), OffHeap.getAllocator().usedMemory() );
+    }
+
+    @Test
+    @Order(7)
+    void checkOffHeapString() {
+        Assumptions.assumeTrue( 1280 == OffHeap.getAllocator().size() );
+
+        OffHeapString ohs = new OffHeapString( HeapStateUtils.offsets[0] );
+        String retrieved = ohs.toString();
+
+        Assertions.assertEquals( retrieved, TEST_TEXT );
+        Assertions.assertEquals( ohs, TEST_TEXT );
+        Assertions.assertFalse( retrieved == TEST_TEXT );
+    }
+
+    @Test
+    @Order(8)
+    void deleteOffHeapString() {
+        Assumptions.assumeTrue( 1280 == OffHeap.getAllocator().size() );
+
+        OffHeapString ohs = new OffHeapString( HeapStateUtils.offsets[0] );
+        OffHeap.deleteInstance( ohs );
 
         Assertions.assertEquals( 0, OffHeap.getAllocator().size() );
         Assertions.assertEquals( MULTI_PUT_LENGTH * MemoryBlockHandle.size(), OffHeap.getAllocator().usedMemory() );
