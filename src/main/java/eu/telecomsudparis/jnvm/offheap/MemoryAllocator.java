@@ -97,13 +97,28 @@ public class MemoryAllocator implements Iterable<MemoryBlockHandle> {
     }
 
     //MemoryAllocator methods
-    public long allocateMemory(long size) {
-        return allocateBlock().getOffset();
+    public long[] allocateMemory(long size, long[] blockOffsets) {
+        for(int i=0; i<blockOffsets.length; i++) {
+            blockOffsets[ i ] = allocateBlock().getOffset();
+        }
+        return blockOffsets;
+    }
+
+    public long[] allocateMemory(long size) {
+        long nblocks = size / (MemoryBlockHandle.size() - 8) + 1;
+        long[] blockOffsets = new long[ (int) nblocks ];
+        return allocateMemory( size, blockOffsets );
     }
 
     public void freeMemory(long offset, long size) {
-        MemoryBlockHandle block = mappings.remove( offset );
-        freeBlock( block );
+        long nblocks = size / (MemoryBlockHandle.size() - 8) + 1;
+        long off = offset;
+        do {
+            MemoryBlockHandle block = mappings.remove( off );
+            off = unsafe.getLong( block.base() );
+            freeBlock( block );
+            nblocks--;
+        } while( nblocks > 0 );
     }
 
     public long totalMemory() {

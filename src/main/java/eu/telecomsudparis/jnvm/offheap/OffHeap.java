@@ -60,6 +60,12 @@ public class OffHeap {
         return k;
     }
 
+    public static <K extends OffHeapBigObjectHandle> K newInstance(K k, long size) {
+        k.attach( allocator.allocateMemory( size, k.getBases() ) );
+        instances.put( k.getOffset(), k );
+        return k;
+    }
+
     //Reconstructor
     public static <K extends OffHeapObject> K recInstance(K k, long offset) {
         k.attach( allocator.blockFromOffset( offset ).getOffset() );
