@@ -7,18 +7,19 @@ import java.util.Collection;
 import java.util.AbstractMap;
 
 import eu.telecomsudparis.jnvm.offheap.OffHeapObjectHandle;
+import eu.telecomsudparis.jnvm.offheap.OffHeapObject;
 import eu.telecomsudparis.jnvm.offheap.OffHeapArray;
 
 
-public class RecoverableHashMap<K extends OffHeapObjectHandle, V extends OffHeapObjectHandle>
-        extends AbstractMap<K,V> implements PersistentMap<K,V> {
+public class RecoverableHashMap<K extends OffHeapObject, V extends OffHeapObject>
+        extends AbstractMap<K,V> implements PersistentMap<K,V>, OffHeapObject {
 
     private static final int DEFAULT_SIZE = 16;
 
     private transient HashMap<K,Long> index;
     private OffHeapArray<OffHeapNode<K,V>> table;
 
-    static class OffHeapNode<K extends OffHeapObjectHandle, V extends OffHeapObjectHandle>
+    static class OffHeapNode<K extends OffHeapObject, V extends OffHeapObject>
             extends OffHeapObjectHandle implements Map.Entry<K,V> {
         final static long[] offsets = { 0, 8 };
         final static long SIZE = 16;
@@ -46,23 +47,28 @@ public class RecoverableHashMap<K extends OffHeapObjectHandle, V extends OffHeap
         }
     }
 
+    //Constructor
+    public RecoverableHashMap() {
+        this( DEFAULT_SIZE );
+    }
+
     public RecoverableHashMap(Map<? extends K, ? extends V> m) {
-        this();
+        this( m.size() );
         putAll( m );
     }
 
-    //Constructor
-    public RecoverableHashMap() {
-        index = new HashMap<>();
-        table = new OffHeapArray<>();
-    }
+    public RecoverableHashMap(int initialSize) {
+        index = new HashMap<>( initialSize );
+        table = new OffHeapArray<>( initialSize );
+	}
 
     //Reconstructor
     public RecoverableHashMap(long offset) {
-        index = new HashMap<>();
-        table = new OffHeapArray<>( offset );
+        table = (OffHeapArray<OffHeapNode<K,V>>)OffHeapArray.rec( offset );
+        long length = table.length();
+        index = new HashMap<>( (int) length );
 
-        for( long i=0; i<table.length(); i++ ) {
+        for( long i=0; i<length; i++ ) {
             //OffHeapNode<K,V> entry = table.get( i );
             //K entryKey = entry.getKey();
             //V entryValue = entry.getValue();
@@ -173,5 +179,14 @@ public class RecoverableHashMap<K extends OffHeapObjectHandle, V extends OffHeap
         }
     }
     */
+
+    public long getOffset() { return table.getOffset(); }
+    public void attach(long offset) { table.attach( offset ); }
+    public void detach() { table.detach(); }
+    public long length() { return table.length(); }
+    public long addressFromFieldOffset(long fieldOffset) {
+        return table.addressFromFieldOffset( fieldOffset );
+    }
+    public void destroy() { table.destroy(); }
 
 }
