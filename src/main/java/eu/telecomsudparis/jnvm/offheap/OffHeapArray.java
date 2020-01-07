@@ -5,7 +5,7 @@ import java.util.NoSuchElementException;
 
 
 public class OffHeapArray<E extends OffHeapObjectHandle>
-        extends OffHeapObjectHandle implements Iterable<E> {
+        extends OffHeapBigObjectHandle implements Iterable<E> {
 
     /* PMEM Layout :
      *  | Index | Offset | Bytes | Name   |
@@ -16,8 +16,8 @@ public class OffHeapArray<E extends OffHeapObjectHandle>
     private final static long[] offsets = { 0L };
     private static final long SIZE = 8;
 
-    private static final long indexScale = 8;
-    private static final long baseOffset = 8;
+    private static final long indexScale = Long.BYTES;
+    private static final long baseOffset = SIZE;
 
     public long length() { return getLongField( offsets[0] ); }
     private void setLength(long length) { setLongField( offsets[0], length); }
@@ -29,18 +29,24 @@ public class OffHeapArray<E extends OffHeapObjectHandle>
     private void unsetElem(long index) { setLongField( elemOffset( index ), -1); }
 
     //Constructor
-    public OffHeapArray() {
-        super();
+    public OffHeapArray(long capacity) {
+        super( computeSize( capacity ) );
         reset();
     }
 
     //Reconstructor
-    public OffHeapArray(long offset) {
-        super( offset );
+    private OffHeapArray() {}
+    public static OffHeapArray rec(long offset) {
+        return OffHeapBigObjectHandle.rec( new OffHeapArray<>(), offset );
+    }
+
+    //Instance methods
+    protected static long computeSize(long length) {
+        return SIZE + length * indexScale;
     }
 
     public long size() {
-        return SIZE + length() * indexScale;
+        return computeSize( length() );
     }
 
     public boolean contains(Object value) {
