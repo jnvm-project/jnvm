@@ -82,6 +82,12 @@ public class OffHeapArray<E extends OffHeapObjectHandle>
         return this;
     }
 
+    public void cloneInto(OffHeapArray<E> dest) {
+        for(long i=0; i<length(); i++) {
+            dest.setElem( i, this.getElem( i ) );
+        }
+    }
+
     //Iterable methods
     public Iterator<E> iterator() {
         return new Iterator() {
