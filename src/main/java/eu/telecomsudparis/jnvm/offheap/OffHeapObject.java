@@ -29,11 +29,11 @@ public interface OffHeapObject {
         return unsafe.getLong( addressFromFieldOffset( fieldOffset ) );
     }
 
-    default void setHandleField(long fieldOffset, OffHeapObjectHandle ohoh) {
+    default void setHandleField(long fieldOffset, OffHeapObject ohoh) {
         setLongField( fieldOffset, ohoh.getOffset() );
     }
 
-    default OffHeapObjectHandle getHandleField(long fieldOffset) {
+    default OffHeapObject getHandleField(long fieldOffset) {
         return OffHeap.instanceFromOffset( getLongField( fieldOffset ) );
     }
 
