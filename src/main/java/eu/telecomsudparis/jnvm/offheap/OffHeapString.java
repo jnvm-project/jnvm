@@ -69,6 +69,10 @@ public class OffHeapString implements OffHeapObject {
         return false;
     }
 
+    public char charAt(long index) {
+        return value.get( index );
+    }
+
     public long getOffset() { return value.getOffset(); }
     public void attach(long offset) { value.attach( offset ); }
     public void detach() { value.detach(); }
