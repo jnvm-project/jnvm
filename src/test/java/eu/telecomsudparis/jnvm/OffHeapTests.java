@@ -181,7 +181,7 @@ class OffHeapTests {
         Assumptions.assumeTrue( 1280 == OffHeap.getAllocator().size() );
 
         OffHeapString ohs = new OffHeapString( HeapStateUtils.offsets[0] );
-        OffHeap.deleteInstance( ohs );
+        ohs.destroy();
 
         Assertions.assertEquals( 0, OffHeap.getAllocator().size() );
         Assertions.assertEquals( MULTI_PUT_LENGTH * MemoryBlockHandle.size(), OffHeap.getAllocator().usedMemory() );

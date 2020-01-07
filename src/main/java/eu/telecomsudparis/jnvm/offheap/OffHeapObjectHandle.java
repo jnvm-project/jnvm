@@ -18,6 +18,11 @@ public abstract class OffHeapObjectHandle implements OffHeapObject {
         OffHeap.recInstance( this, offset );
     }
 
+    //Destructor
+    public void destroy() {
+        OffHeap.deleteInstance( this );
+    }
+
     //Field accessors
     public long getOffset() {
         return this.offset;

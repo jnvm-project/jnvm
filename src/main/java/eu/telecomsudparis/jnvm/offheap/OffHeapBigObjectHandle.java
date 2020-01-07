@@ -22,6 +22,11 @@ public abstract class OffHeapBigObjectHandle implements OffHeapObject {
         return OffHeap.recInstance( ohboh, offset );
     }
 
+    //Destructor
+    public void destroy() {
+        OffHeap.deleteInstance( this );
+    }
+
     //Field accessors
     public long getOffset() {
         return this.offset;

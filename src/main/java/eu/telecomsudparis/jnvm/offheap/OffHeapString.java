@@ -77,5 +77,6 @@ public class OffHeapString implements OffHeapObject {
     public long addressFromFieldOffset(long fieldOffset) {
         return value.addressFromFieldOffset( fieldOffset );
     }
+    public void destroy() { value.destroy(); }
 
 }

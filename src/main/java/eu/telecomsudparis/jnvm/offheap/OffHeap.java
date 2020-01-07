@@ -94,7 +94,19 @@ public class OffHeap {
         return k;
     }
 
-    public static <K extends OffHeapObject> void deleteInstance(K k) {
+    public static <K extends OffHeapObject> void deleteInstance(K k, long size) {
+        allocator.freeMemory( k.getOffset(), size );
+        k.detach();
+        instances.remove( k.getOffset() );
+    }
+
+    public static <K extends OffHeapBigObjectHandle> void deleteInstance(K k) {
+        allocator.freeMemory( k.getOffset(), k.size() );
+        k.detach();
+        instances.remove( k.getOffset() );
+    }
+
+    public static <K extends OffHeapObjectHandle> void deleteInstance(K k) {
         allocator.freeMemory( k.getOffset(), k.size() );
         k.detach();
         instances.remove( k.getOffset() );
