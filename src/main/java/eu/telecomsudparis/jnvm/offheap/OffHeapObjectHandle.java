@@ -48,6 +48,8 @@ public abstract class OffHeapObjectHandle implements OffHeapObject {
         this.base = -1L;
     }
 
+    public abstract long size();
+
     //Java.lang.Object overrides
     @Override
     public int hashCode() {
