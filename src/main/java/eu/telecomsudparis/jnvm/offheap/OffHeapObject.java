@@ -13,6 +13,14 @@ public interface OffHeapObject {
     long addressFromFieldOffset(long fieldOffset);
 
     //Data manipulation methods
+    default void setByteField(long fieldOffset, byte value) {
+        unsafe.putByte( addressFromFieldOffset( fieldOffset ), value );
+    }
+
+    default byte getByteField(long fieldOffset) {
+        return unsafe.getByte( addressFromFieldOffset( fieldOffset ) );
+    }
+
     default void setCharField(long fieldOffset, char value) {
         unsafe.putChar( addressFromFieldOffset( fieldOffset ), value );
     }
