@@ -60,7 +60,7 @@ public class RecoverableHashMap<K extends OffHeapObject, V extends OffHeapObject
     public RecoverableHashMap(int initialSize) {
         index = new HashMap<>( initialSize );
         table = new OffHeapArray<>( initialSize );
-	}
+    }
 
     //Reconstructor
     public RecoverableHashMap(long offset) {
