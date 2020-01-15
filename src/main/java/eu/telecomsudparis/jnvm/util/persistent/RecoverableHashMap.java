@@ -118,6 +118,14 @@ public class RecoverableHashMap<K extends OffHeapObject, V extends OffHeapObject
         return oldValue;
     }
 
+    public V replace(Object key, V value) {
+        Long idx; V oldValue = null;
+        if( ( idx = index.get( key ) ) != null ) {
+            oldValue = table.get( idx ).setValue( value );
+        }
+        return oldValue;
+    }
+
     public V get(Object key) {
         Long idx;
         if( ( idx = index.get( key ) ) != null ) {
