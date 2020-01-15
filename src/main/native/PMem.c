@@ -24,12 +24,16 @@ static void zero_out_file(int fd, size_t length) {
     free(zero);
 }
 
+static void zero_out_file2(int fd, size_t length) {
+    posix_fallocate(fd, 0, length);
+}
+
 static char *open_pmem_root(const char *path, size_t length) {
     if((fd = open(path, O_RDWR, 0777)) < 0) {
         int errnum = errno;
         if(errnum == ENOENT) {
             if((fd = open(path, O_RDWR|O_CREAT|O_EXCL, 0777)) >= 0)
-                zero_out_file(fd, length);
+                zero_out_file2(fd, length);
         } else {
             perror("open_pmem_root: ");
             exit(EXIT_FAILURE);
