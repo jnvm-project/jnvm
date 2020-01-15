@@ -150,8 +150,7 @@ public class RecoverableHashMap<K extends OffHeapObject, V extends OffHeapObject
     /* AbstractMap methods */
 
     public Set<Map.Entry<K,V>> entrySet() {
-        //return table.clone();
-        return null;
+        return table.clone().asSet();
     }
 
     /* ConcurrentMap methods */

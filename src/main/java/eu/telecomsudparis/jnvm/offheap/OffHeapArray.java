@@ -1,6 +1,9 @@
 package eu.telecomsudparis.jnvm.offheap;
 
 import java.util.Iterator;
+import java.util.Collection;
+import java.util.Set;
+import java.lang.UnsupportedOperationException;
 import java.util.NoSuchElementException;
 
 
@@ -105,46 +108,73 @@ public class OffHeapArray<E extends OffHeapObjectHandle>
     }
 
     /* Set methods */
-    /*
-    @Override
-    public boolean add(E e) {
-        return false;
-    }
+    public Set<E> asSet() {
+        return new Set<E>() {
+            @Override
+            public boolean add(E e) {
+                throw new UnsupportedOperationException();
+            }
 
-    @Override
-    public boolean remove(Object o) {
-        return false;
-    }
+            @Override
+            public boolean remove(Object o) {
+                throw new UnsupportedOperationException();
+            }
 
-    @Override
-    public boolean addAll(Collection<? extends E> c) {
-        return false;
-    }
+            @Override
+            public void clear() {
+                throw new UnsupportedOperationException();
+            }
 
-    @Override
-    public boolean containsAll(Collection<?> c) {
-        return false;
-    }
+            @Override
+            public boolean addAll(Collection<? extends E> c) {
+                throw new UnsupportedOperationException();
+            }
 
-    @Override
-    public boolean removeAll(Collection<?> c) {
-        return false;
-    }
+            @Override
+            public boolean contains(Object o) {
+                throw new UnsupportedOperationException();
+            }
 
-    @Override
-    public boolean retainAll(Collection<?> c) {
-        return false;
-    }
+            @Override
+            public boolean isEmpty() {
+                throw new UnsupportedOperationException();
+            }
 
-    @Override
-    public Object[] toArray() {
-        return null;
-    }
+            @Override
+            public int size() {
+                throw new UnsupportedOperationException();
+            }
 
-    @Override
-    public <T> T[] toArray(T[] a) {
-        return null;
+            @Override
+            public boolean containsAll(Collection<?> c) {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public boolean removeAll(Collection<?> c) {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public boolean retainAll(Collection<?> c) {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public Iterator<E> iterator() {
+                return OffHeapArray.this.iterator();
+            }
+
+            @Override
+            public Object[] toArray() {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public <T> T[] toArray(T[] a) {
+                throw new UnsupportedOperationException();
+            }
+        };
     }
-    */
 
 }
