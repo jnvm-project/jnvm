@@ -13,7 +13,7 @@ public class OffHeap {
 
     private transient static final MemoryPool pool;
     private transient static final MemoryAllocator allocator;
-    private transient static final HashMap<Long, OffHeapObject> instances;
+    public transient static final HashMap<Long, OffHeapObject> instances;
     private transient static final ArrayList<String> classes;
 
     static {

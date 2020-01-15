@@ -9,6 +9,7 @@ import java.util.AbstractMap;
 import eu.telecomsudparis.jnvm.offheap.OffHeapObjectHandle;
 import eu.telecomsudparis.jnvm.offheap.OffHeapObject;
 import eu.telecomsudparis.jnvm.offheap.OffHeapArray;
+import eu.telecomsudparis.jnvm.offheap.OffHeap;
 
 
 public class RecoverableHashMap<K extends OffHeapObject, V extends OffHeapObject>
@@ -60,11 +61,13 @@ public class RecoverableHashMap<K extends OffHeapObject, V extends OffHeapObject
     public RecoverableHashMap(int initialSize) {
         index = new HashMap<>( initialSize );
         table = new OffHeapArray<>( initialSize );
+        OffHeap.instances.put(table.getOffset(), this);
     }
 
     //Reconstructor
     public RecoverableHashMap(long offset) {
         table = (OffHeapArray<OffHeapNode<K,V>>)OffHeapArray.rec( offset );
+        OffHeap.instances.put(table.getOffset(), this);
         long length = table.length();
         index = new HashMap<>( (int) length );
 

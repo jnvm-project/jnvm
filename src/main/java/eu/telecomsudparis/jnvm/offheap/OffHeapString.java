@@ -1,5 +1,7 @@
 package eu.telecomsudparis.jnvm.offheap;
 
+import eu.telecomsudparis.jnvm.offheap.OffHeap;
+
 
 public class OffHeapString implements OffHeapObject {
 
@@ -16,6 +18,7 @@ public class OffHeapString implements OffHeapObject {
     public OffHeapString(String original) {
         this.value = new OffHeapCharArray( original.toCharArray() );
         this.hash = original.hashCode();
+        OffHeap.instances.put(value.getOffset(), this);
     }
 
     public String toString() {
@@ -25,6 +28,7 @@ public class OffHeapString implements OffHeapObject {
     //Reconstructor
     public OffHeapString(long offset) {
         this.value = OffHeapCharArray.rec( offset );
+        OffHeap.instances.put(value.getOffset(), this);
     }
 
     @Override
