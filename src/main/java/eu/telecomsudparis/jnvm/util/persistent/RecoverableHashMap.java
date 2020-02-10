@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.Collection;
 import java.util.AbstractMap;
 
+import eu.telecomsudparis.jnvm.offheap.MemoryBlockHandle;
 import eu.telecomsudparis.jnvm.offheap.OffHeapObjectHandle;
 import eu.telecomsudparis.jnvm.offheap.OffHeapObject;
 import eu.telecomsudparis.jnvm.offheap.OffHeapArray;
