@@ -19,7 +19,6 @@ public class OffHeap {
     private transient static final MemoryPool pool;
     private transient static final MemoryAllocator allocator;
     public transient static final HashMap<Long, OffHeapObject> instances;
-    private transient static final ArrayList<String> classes;
 
     //TODO Generate this from all classes extending OffHeapObject
     //     and the one existing on the memory pool metablock
@@ -68,7 +67,6 @@ public class OffHeap {
         allocator = MemoryAllocator.recover( pool.address(), pool.limit() );
         instances = new HashMap<>();
         //TODO Store OffHeap state, including offsets to our objects, in a metablock.
-        classes = new ArrayList<>();
         //Eager object pointer mapping initialization
         //TODO iterate over MemoryPool and fill instances hash table
         /*
@@ -82,17 +80,6 @@ public class OffHeap {
         throw new UnsupportedOperationException();
     }
 
-    //TODO implement classId to class pointer retrieval mechanism
-    private static <K extends OffHeapObject> Class<?> klazz(long classId) {
-        try {
-            return Class.forName( classes.get( (int) classId ) );
-        } catch(Exception e) {
-        }
-        return null;
-    }
-    public static <K extends OffHeapObject> void registerClass(Class<K> klass) {
-        classes.add( klass.getName() );
-    }
     public static MemoryAllocator getAllocator() { return allocator; }
 
     //Constructor
