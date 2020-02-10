@@ -30,6 +30,9 @@ public class OffHeapString implements OffHeapObject {
         this.value = OffHeapCharArray.rec( offset );
         OffHeap.instances.put(value.getOffset(), this);
     }
+    public OffHeapString(MemoryBlockHandle block) {
+        this( block.getOffset() );
+    }
 
     @Override
     public int hashCode() {
