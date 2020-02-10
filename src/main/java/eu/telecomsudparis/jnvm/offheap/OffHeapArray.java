@@ -57,6 +57,10 @@ public class OffHeapArray<E extends OffHeapObjectHandle>
         return computeSize( length() );
     }
 
+    public long indexScale() { return indexScale; }
+
+    public long baseOffset() { return baseOffset; }
+
     public long classId() { return CLASS_ID; }
 
     public boolean contains(Object value) {

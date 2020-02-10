@@ -42,8 +42,9 @@ public abstract class OffHeapBigObjectHandle implements OffHeapObject {
 
     //Instance methods
     public void attach(long offset) {
-        long size = 8 + unsafe.getLong( offset + 16 ) * Character.BYTES;
-        this.bases = new long[ (int) (size / BYTES_PER_BASE + 1) ];
+        long size = this.baseOffset() + unsafe.getLong( offset + 16 ) * this.indexScale();
+        long nblocks = size / BYTES_PER_BASE + 1;
+        this.bases = new long[ (int) nblocks ];
         this.offset = offset;
         long off = offset;
         for(int i=0; i<bases.length; i++) {
@@ -69,6 +70,8 @@ public abstract class OffHeapBigObjectHandle implements OffHeapObject {
     }
 
     public abstract long size();
+    public abstract long indexScale();
+    public abstract long baseOffset();
 
     //Java.lang.Object overrides
     @Override
