@@ -36,6 +36,8 @@ public class MemoryAllocator implements Iterable<MemoryBlockHandle> {
             }
             if( !block.isValid() ) {
                 allocator.reclaimed.add( block );
+            } else if( !block.isMultiBlock() ) {
+                //OffHeap.newInstance( block );
             } else {
                 //allocator.mappings.put( block.getOffset(), block );
             }
