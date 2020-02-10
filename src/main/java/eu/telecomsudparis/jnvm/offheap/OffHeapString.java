@@ -21,6 +21,7 @@ public class OffHeapString implements OffHeapObject {
         this.value = new OffHeapCharArray( original.toCharArray() );
         this.hash = original.hashCode();
         //OffHeap.instances.put(value.getOffset(), this);
+        OffHeap.getAllocator().blockFromOffset( value.getOffset() ).setKlass( CLASS_ID );
     }
 
     public String toString() {

@@ -69,6 +69,7 @@ public class RecoverableHashMap<K extends OffHeapObject, V extends OffHeapObject
         index = new HashMap<>( initialSize );
         table = new OffHeapArray<>( initialSize );
         //OffHeap.instances.put(table.getOffset(), this);
+        OffHeap.getAllocator().blockFromOffset( table.getOffset() ).setKlass( CLASS_ID );
     }
 
     //Reconstructor
