@@ -81,6 +81,20 @@ public class RecoverableHashMap<K extends OffHeapObject, V extends OffHeapObject
         index = new HashMap<>( (int) length );
 
         for( long i=0; i<length; i++ ) {
+            /*
+            OffHeapNode<K,V> entry = null; K entryKey = null;
+                entry = table.get( i );
+                if( entry == null ) {
+                    System.out.println("No key found at index: " + String.valueOf(i) );
+                    System.out.println("No key found at offset: " + String.valueOf( entry.addressFromFieldOffset( entry.offsets[0] ) ) );
+                    break;
+                }
+                entryKey = entry.getKey();
+                if( entryKey == null ) {
+                    System.out.println("No table entry at index: " + String.valueOf(i) );
+                    break;
+                }
+            */
             //OffHeapNode<K,V> entry = table.get( i );
             //K entryKey = entry.getKey();
             //V entryValue = entry.getValue();
