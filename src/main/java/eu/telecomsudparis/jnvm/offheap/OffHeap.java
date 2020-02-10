@@ -9,6 +9,7 @@ import eu.telecomsudparis.jnvm.util.persistent.RecoverableHashMap;
 
 import java.util.Map;
 import java.util.HashMap;
+import java.lang.reflect.Constructor;
 
 
 public class OffHeap {
@@ -117,7 +118,9 @@ public class OffHeap {
     public static <K extends OffHeapObject> K newInstance(MemoryBlockHandle block) {
         K k = null;
         try {
-            k = (K) klazz( block.getKlass() ).newInstance();
+            Class klass = Klass.klazz( block.getKlass() );
+            Constructor kons = klass.getConstructor( MemoryBlockHandle.class );
+            k = (K) kons.newInstance( block );
             k.attach( block.getOffset() );
             instances.put( k.getOffset(), k );
         } catch(Exception e) {
