@@ -167,6 +167,18 @@ public class MemoryBlockHandle {
         unsafe.psync();
     }
 
+    //Debug methods
+    public String toString() {
+        return String.format("Block at [%d] with header [%b,%b,%b,%s,%d,%d]",
+            offset - OffHeap.baseAddr(),
+            isValid(),
+            hasNext(),
+            isMultiBlock(),
+            getKlass(),
+            getBlockLength(),
+            getNext());
+    }
+
     //Unsafe mechanics
     private static final long SIZE;
 
