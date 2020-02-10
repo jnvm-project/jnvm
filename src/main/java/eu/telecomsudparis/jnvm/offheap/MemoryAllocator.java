@@ -78,6 +78,7 @@ public class MemoryAllocator implements Iterable<MemoryBlockHandle> {
             block = new MemoryBlockHandle( offset + BASE + blockOffset );
         }
         block.init();
+        block.commit();
 
         unsafe.putLong( offset + SIZE, this.size() + block.size() );
 
