@@ -49,7 +49,7 @@ public abstract class OffHeapBigObjectHandle implements OffHeapObject {
         long off = offset;
         for(int i=0; i<bases.length; i++) {
             bases[i] = OffHeap.getAllocator().blockFromOffset( off ).base();
-            off = unsafe.getLong( bases[i] + 0 );
+            off = OffHeap.baseAddr() + unsafe.getLong( bases[i] + 0 );
         }
     }
 
@@ -58,7 +58,7 @@ public abstract class OffHeapBigObjectHandle implements OffHeapObject {
         for(int i=0; i<bases.length; i++) {
             bases[i] = OffHeap.getAllocator().blockFromOffset( offset[i] ).base();
             if( i+1 < offset.length )
-                unsafe.putLong( bases[i] + 0, offset[i+1] );
+                unsafe.putLong( bases[i] + 0, offset[i+1] - OffHeap.baseAddr() );
             else
                 unsafe.putLong( bases[i] + 0, -1 );
         }

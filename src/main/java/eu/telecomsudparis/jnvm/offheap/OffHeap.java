@@ -81,6 +81,7 @@ public class OffHeap {
     }
 
     public static MemoryAllocator getAllocator() { return allocator; }
+    public static long baseAddr() { return pool.address(); }
 
     //Constructor
     public static <K extends OffHeapObject> K newInstance(K k) {
