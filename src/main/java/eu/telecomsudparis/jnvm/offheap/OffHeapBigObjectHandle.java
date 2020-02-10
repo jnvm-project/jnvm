@@ -48,7 +48,8 @@ public abstract class OffHeapBigObjectHandle implements OffHeapObject {
         this.offset = offset;
         long off = offset;
         for(int i=0; i<bases.length; i++) {
-            bases[i] = OffHeap.getAllocator().blockFromOffset( off ).base();
+            MemoryBlockHandle block = OffHeap.getAllocator().blockFromOffset( off );
+            bases[i] = block.base();
             off = OffHeap.baseAddr() + unsafe.getLong( bases[i] + 0 );
         }
     }
@@ -56,7 +57,10 @@ public abstract class OffHeapBigObjectHandle implements OffHeapObject {
     public void attach(long[] offset) {
         this.offset = offset[0];
         for(int i=0; i<bases.length; i++) {
-            bases[i] = OffHeap.getAllocator().blockFromOffset( offset[i] ).base();
+            MemoryBlockHandle block = OffHeap.getAllocator().blockFromOffset( offset[i] );
+            bases[i] = block.base();
+            block.setKlass( classId() );
+            block.setMultiBlock( i != 0 );
             if( i+1 < offset.length )
                 unsafe.putLong( bases[i] + 0, offset[i+1] - OffHeap.baseAddr() );
             else

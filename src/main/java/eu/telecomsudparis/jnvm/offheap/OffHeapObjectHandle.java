@@ -41,6 +41,7 @@ public abstract class OffHeapObjectHandle implements OffHeapObject {
     public void attach(long offset) {
         this.offset = offset;
         this.base = block().base();
+        block().setKlass( classId() );
     }
 
     public void detach() {
