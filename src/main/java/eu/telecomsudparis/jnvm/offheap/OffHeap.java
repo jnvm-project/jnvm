@@ -5,6 +5,10 @@ import java.util.HashMap;
 import java.util.ArrayList;
 
 import eu.telecomsudparis.jnvm.config.Environment;
+import eu.telecomsudparis.jnvm.util.persistent.RecoverableHashMap;
+
+import java.util.Map;
+import java.util.HashMap;
 
 
 public class OffHeap {
@@ -15,6 +19,43 @@ public class OffHeap {
     private transient static final MemoryAllocator allocator;
     public transient static final HashMap<Long, OffHeapObject> instances;
     private transient static final ArrayList<String> classes;
+
+    //TODO Generate this from all classes extending OffHeapObject
+    //     and the one existing on the memory pool metablock
+    public enum Klass {
+        A(0, OffHeapArray.class),
+        B(1, OffHeapCharArray.class),
+        C(2, OffHeapByteArray.class),
+        D(3, OffHeapString.class),
+        E(4, RecoverableHashMap.class),
+        F(5, RecoverableHashMap.OffHeapNode.class);
+
+        private static final Map<Class<?>, Klass> BY_NAME = new HashMap<>();
+        private static final Map<Long, Klass> BY_ID = new HashMap<>();
+
+        static {
+            for( OffHeap.Klass ohc : values()){
+                BY_NAME.put( ohc.klazz, ohc );
+                BY_ID.put( ohc.classId, ohc );
+            }
+        }
+
+        public final long classId;
+        public final Class<?> klazz;
+
+        private Klass(long classId, Class<?> klazz) {
+            this.classId = classId;
+            this.klazz = klazz;
+        }
+
+        public static Class<?> klazz(long classId) {
+            return BY_ID.get( classId ).klazz;
+        }
+
+        public static long register(Class<?> klass) {
+            return BY_NAME.get( klass ).classId;
+        }
+    }
 
     static {
         //TODO Factory design where pools are known from cfg file and lazily
