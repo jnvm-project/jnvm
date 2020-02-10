@@ -63,9 +63,9 @@ public class OffHeap {
         String path = properties.getProperty("jnvm.heap.path");
         long size = Long.parseLong( properties.getProperty("jnvm.heap.size") );
 
+        instances = new HashMap<>();
         pool = MemoryPool.open( path, size );
         allocator = MemoryAllocator.recover( pool.address(), pool.limit() );
-        instances = new HashMap<>();
         //TODO Store OffHeap state, including offsets to our objects, in a metablock.
         //Eager object pointer mapping initialization
         //TODO iterate over MemoryPool and fill instances hash table
@@ -86,20 +86,20 @@ public class OffHeap {
     //Constructor
     public static <K extends OffHeapObject> K newInstance(K k) {
         k.attach( allocator.allocateBlock().getOffset() );
-        instances.put( k.getOffset(), k );
+        //instances.put( k.getOffset(), k );
         return k;
     }
 
     public static <K extends OffHeapBigObjectHandle> K newInstance(K k, long size) {
         k.attach( allocator.allocateMemory( size, k.getBases() ) );
-        instances.put( k.getOffset(), k );
+        //instances.put( k.getOffset(), k );
         return k;
     }
 
     //Reconstructor
     public static <K extends OffHeapObject> K recInstance(K k, long offset) {
         k.attach( allocator.blockFromOffset( offset ).getOffset() );
-        instances.put( k.getOffset(), k );
+        //instances.put( k.getOffset(), k );
         return k;
     }
 
