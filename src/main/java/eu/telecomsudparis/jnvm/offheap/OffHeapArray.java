@@ -10,6 +10,8 @@ import java.util.NoSuchElementException;
 public class OffHeapArray<E extends OffHeapObjectHandle>
         extends OffHeapBigObjectHandle implements Iterable<E> {
 
+    private static final long CLASS_ID = OffHeap.Klass.register( OffHeapArray.class );
+
     /* PMEM Layout :
      *  | Index | Offset | Bytes | Name   |
      *  |-------+--------+-------+--------|
@@ -54,6 +56,8 @@ public class OffHeapArray<E extends OffHeapObjectHandle>
     public long size() {
         return computeSize( length() );
     }
+
+    public long classId() { return CLASS_ID; }
 
     public boolean contains(Object value) {
         return false;

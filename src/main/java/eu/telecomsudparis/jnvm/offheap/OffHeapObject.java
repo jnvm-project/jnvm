@@ -9,6 +9,7 @@ public interface OffHeapObject {
     void attach(long offset);
     void detach();
     void destroy();
+    long classId();
 
     long addressFromFieldOffset(long fieldOffset);
 

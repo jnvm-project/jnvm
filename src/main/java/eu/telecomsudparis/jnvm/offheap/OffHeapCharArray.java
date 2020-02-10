@@ -7,6 +7,8 @@ import java.util.NoSuchElementException;
 public class OffHeapCharArray
         extends OffHeapBigObjectHandle implements Iterable<Character> {
 
+    private static final long CLASS_ID = OffHeap.Klass.register( OffHeapCharArray.class );
+
     /* OffHeap Layout :
      *  | Index | Offset | Bytes | Name   |
      *  |-------+--------+-------+--------|
@@ -67,6 +69,8 @@ public class OffHeapCharArray
     public long size() {
         return computeSize( length() );
     }
+
+    public long classId() { return CLASS_ID; }
 
     public boolean contains(Object value) {
         return false;

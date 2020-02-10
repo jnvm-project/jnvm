@@ -5,6 +5,8 @@ import eu.telecomsudparis.jnvm.offheap.OffHeap;
 
 public class OffHeapString implements OffHeapObject {
 
+    private static final long CLASS_ID = OffHeap.Klass.register( OffHeapString.class );
+
     private final OffHeapCharArray value;
     private transient int hash;
 
@@ -84,6 +86,7 @@ public class OffHeapString implements OffHeapObject {
     public void attach(long offset) { value.attach( offset ); }
     public void detach() { value.detach(); }
     public long size() { return value.size(); }
+    public long classId() { return CLASS_ID; }
     public long length() { return value.length(); }
     public long addressFromFieldOffset(long fieldOffset) {
         return value.addressFromFieldOffset( fieldOffset );

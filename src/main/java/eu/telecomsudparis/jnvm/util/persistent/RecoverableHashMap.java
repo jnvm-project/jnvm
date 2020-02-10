@@ -15,6 +15,8 @@ import eu.telecomsudparis.jnvm.offheap.OffHeap;
 public class RecoverableHashMap<K extends OffHeapObject, V extends OffHeapObject>
         extends AbstractMap<K,V> implements PersistentMap<K,V>, OffHeapObject {
 
+    private static final long CLASS_ID = OffHeap.Klass.register( RecoverableHashMap.class );
+
     private static final int DEFAULT_SIZE = 16;
 
     private transient HashMap<K,Long> index;
@@ -22,6 +24,7 @@ public class RecoverableHashMap<K extends OffHeapObject, V extends OffHeapObject
 
     static class OffHeapNode<K extends OffHeapObject, V extends OffHeapObject>
             extends OffHeapObjectHandle implements Map.Entry<K,V> {
+        private static final long CLASS_ID = OffHeap.Klass.register( RecoverableHashMap.OffHeapNode.class );
         final static long[] offsets = { 0, 8 };
         final static long SIZE = 16;
 
@@ -41,6 +44,7 @@ public class RecoverableHashMap<K extends OffHeapObject, V extends OffHeapObject
         }
 
         public long size() { return SIZE; }
+        public long classId() { return CLASS_ID; }
 
         public final K getKey() { return (K) getHandleField( offsets[0] ); }
         public final V getValue() { return (V) getHandleField( offsets[1] ); }
@@ -199,6 +203,7 @@ public class RecoverableHashMap<K extends OffHeapObject, V extends OffHeapObject
     public long getOffset() { return table.getOffset(); }
     public void attach(long offset) { table.attach( offset ); }
     public void detach() { table.detach(); }
+    public long classId() { return CLASS_ID; }
     public long length() { return table.length(); }
     public long addressFromFieldOffset(long fieldOffset) {
         return table.addressFromFieldOffset( fieldOffset );
