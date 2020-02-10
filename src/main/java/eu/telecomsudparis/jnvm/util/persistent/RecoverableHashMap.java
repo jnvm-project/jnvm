@@ -23,7 +23,7 @@ public class RecoverableHashMap<K extends OffHeapObject, V extends OffHeapObject
     private transient HashMap<K,Long> index;
     private OffHeapArray<OffHeapNode<K,V>> table;
 
-    static class OffHeapNode<K extends OffHeapObject, V extends OffHeapObject>
+    public static class OffHeapNode<K extends OffHeapObject, V extends OffHeapObject>
             extends OffHeapObjectHandle implements Map.Entry<K,V> {
         private static final long CLASS_ID = OffHeap.Klass.register( RecoverableHashMap.OffHeapNode.class );
         final static long[] offsets = { 0, 8 };
