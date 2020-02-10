@@ -5,7 +5,7 @@ import eu.telecomsudparis.jnvm.offheap.OffHeap;
 
 public abstract class OffHeapBigObjectHandle implements OffHeapObject {
 
-    private static final long BYTES_PER_BASE = MemoryBlockHandle.size() - 8 - 8;
+    protected static final long BYTES_PER_BASE = MemoryBlockHandle.size() - 8 - 8;
     private transient long offset = -1L;
     private transient long[] bases = null;
 

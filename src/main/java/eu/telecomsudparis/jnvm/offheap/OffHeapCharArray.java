@@ -20,6 +20,14 @@ public class OffHeapCharArray
 
     private static final long indexScale = Character.BYTES;
     private static final long baseOffset = SIZE;
+    private static final long nativeIndexScale =
+        unsafe.arrayIndexScale(char[].class);
+    private static final long nativeBaseOffset =
+        unsafe.arrayBaseOffset(char[].class);
+    private static final long ELEM_FIRST_BASE =
+        ( OffHeapBigObjectHandle.BYTES_PER_BASE - baseOffset ) / indexScale;
+    private static final long ELEM_PER_BASE =
+        ( OffHeapBigObjectHandle.BYTES_PER_BASE ) / indexScale;
 
     public long length() { return getLongField( offsets[0] ); }
     private void setLength(long length) { setLongField( offsets[0], length); }
@@ -37,10 +45,28 @@ public class OffHeapCharArray
     }
 
     //Convertor
+    // Naive
+    /*
     public OffHeapCharArray(char[] value) {
         this( value.length );
-        for( int i=0; i < length(); i++ ) {
+        for( int i=0; i < value.length; i++ ) {
             setElem( i, value[i] );
+        }
+    }
+    */
+    // Unsafe
+    public OffHeapCharArray(char[] value) {
+        this( value.length );
+        long[] bases = this.getBases();
+        long nOffset = nativeBaseOffset;
+
+        unsafe.copyMemory( value, nOffset, null, bases[0] + 16, ELEM_FIRST_BASE * nativeIndexScale );
+        nOffset += ELEM_FIRST_BASE * nativeIndexScale;
+        int iter=1;
+        for( long i=ELEM_FIRST_BASE; i < value.length; i+=ELEM_PER_BASE ) {
+            unsafe.copyMemory( value, nOffset, null, bases[iter] + 8, ELEM_PER_BASE * nativeIndexScale );
+            nOffset += ELEM_PER_BASE * nativeIndexScale;
+            iter++;
         }
     }
 
