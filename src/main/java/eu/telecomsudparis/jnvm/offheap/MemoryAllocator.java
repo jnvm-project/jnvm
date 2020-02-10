@@ -37,7 +37,7 @@ public class MemoryAllocator implements Iterable<MemoryBlockHandle> {
             if( !block.isValid() ) {
                 allocator.reclaimed.add( block );
             } else {
-                allocator.mappings.put( block.getOffset(), block );
+                //allocator.mappings.put( block.getOffset(), block );
             }
         }
 
@@ -79,7 +79,7 @@ public class MemoryAllocator implements Iterable<MemoryBlockHandle> {
 
         unsafe.putLong( offset + SIZE, this.size() + block.size() );
 
-        mappings.put( block.getOffset(), block );
+        //mappings.put( block.getOffset(), block );
 
         return block;
     }
@@ -93,7 +93,8 @@ public class MemoryAllocator implements Iterable<MemoryBlockHandle> {
     }
 
     public MemoryBlockHandle blockFromOffset(long offset) {
-        return mappings.get( offset );
+        //return mappings.get( offset );
+        return new MemoryBlockHandle( offset );
     }
 
     //MemoryAllocator methods
@@ -114,7 +115,8 @@ public class MemoryAllocator implements Iterable<MemoryBlockHandle> {
         long nblocks = size / (MemoryBlockHandle.size() - 8) + 1;
         long off = offset;
         do {
-            MemoryBlockHandle block = mappings.remove( off );
+            //MemoryBlockHandle block = mappings.remove( off );
+            MemoryBlockHandle block = new MemoryBlockHandle( off );
             off = unsafe.getLong( block.base() );
             freeBlock( block );
             nblocks--;
