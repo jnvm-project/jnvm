@@ -6,6 +6,7 @@ import java.util.ArrayList;
 
 import eu.telecomsudparis.jnvm.config.Environment;
 import eu.telecomsudparis.jnvm.util.persistent.RecoverableHashMap;
+import eu.telecomsudparis.jnvm.util.persistent.RecoverableStrongHashMap;
 
 import java.util.Map;
 import java.util.HashMap;
@@ -33,7 +34,9 @@ public class OffHeap {
         C(2, OffHeapByteArray.class),
         D(3, OffHeapString.class),
         E(4, RecoverableHashMap.class),
-        F(5, RecoverableHashMap.OffHeapNode.class);
+        F(5, RecoverableHashMap.OffHeapNode.class),
+        G(6, RecoverableStrongHashMap.class),
+        H(7, RecoverableStrongHashMap.OffHeapNode.class);
 
         private static final Map<Class<?>, Klass> BY_NAME = new HashMap<>();
         private static final Map<Long, Klass> BY_ID = new HashMap<>();
