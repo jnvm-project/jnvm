@@ -21,6 +21,10 @@ public class OffHeap {
     private transient static final MemoryAllocator allocator;
     public transient static final Map<Long, OffHeapObject> instances;
 
+    //TODO Have a proper metablock layout declaration
+    private static final long ROOT_INSTANCES = 16;
+    public static final RecoverableHashMap<OffHeapString, OffHeapObject> rootInstances;
+
     //TODO Generate this from all classes extending OffHeapObject
     //     and the one existing on the memory pool metablock
     public enum Klass {
@@ -68,6 +72,11 @@ public class OffHeap {
         pool = MemoryPool.open( path, size );
         allocator = MemoryAllocator.recover( pool.address(), pool.limit() );
         //TODO Store OffHeap state, including offsets to our objects, in a metablock.
+        if( allocator.top() == 0 ) {
+            rootInstances = new RecoverableHashMap(30);
+        } else {
+            rootInstances = new RecoverableHashMap( baseAddr() + ROOT_INSTANCES );
+        }
         //Eager object pointer mapping initialization
         //TODO iterate over MemoryPool and fill instances hash table
         /*
