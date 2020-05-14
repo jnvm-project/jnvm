@@ -9,6 +9,7 @@ import eu.telecomsudparis.jnvm.util.persistent.RecoverableHashMap;
 
 import java.util.Map;
 import java.util.HashMap;
+import java.util.WeakHashMap;
 import java.lang.reflect.Constructor;
 
 
@@ -18,7 +19,7 @@ public class OffHeap {
 
     private transient static final MemoryPool pool;
     private transient static final MemoryAllocator allocator;
-    public transient static final HashMap<Long, OffHeapObject> instances;
+    public transient static final Map<Long, OffHeapObject> instances;
 
     //TODO Generate this from all classes extending OffHeapObject
     //     and the one existing on the memory pool metablock
@@ -63,7 +64,7 @@ public class OffHeap {
         String path = properties.getProperty("jnvm.heap.path");
         long size = Long.parseLong( properties.getProperty("jnvm.heap.size") );
 
-        instances = new HashMap<>();
+        instances = new WeakHashMap<>();
         pool = MemoryPool.open( path, size );
         allocator = MemoryAllocator.recover( pool.address(), pool.limit() );
         //TODO Store OffHeap state, including offsets to our objects, in a metablock.
