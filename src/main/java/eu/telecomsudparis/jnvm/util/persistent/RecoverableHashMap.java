@@ -10,6 +10,7 @@ import eu.telecomsudparis.jnvm.offheap.MemoryBlockHandle;
 import eu.telecomsudparis.jnvm.offheap.OffHeapObjectHandle;
 import eu.telecomsudparis.jnvm.offheap.OffHeapObject;
 import eu.telecomsudparis.jnvm.offheap.OffHeapArray;
+import eu.telecomsudparis.jnvm.offheap.OffHeapString;
 import eu.telecomsudparis.jnvm.offheap.OffHeap;
 
 
@@ -107,6 +108,21 @@ public class RecoverableHashMap<K extends OffHeapObject, V extends OffHeapObject
     }
     public RecoverableHashMap(MemoryBlockHandle block) {
         this( block.getOffset() );
+    }
+    public static RecoverableHashMap recover(String name, int initialSize) {
+        OffHeapObject oho = OffHeap.rootInstances.get( name );
+        RecoverableHashMap ret = null;
+        if( oho != null ) {
+          if( oho instanceof RecoverableHashMap ) {
+            ret = (RecoverableHashMap) oho;
+          } else {
+            throw new IllegalStateException("Root name already exists");
+          }
+        } else {
+          ret = new RecoverableHashMap( initialSize );
+          OffHeap.rootInstances.put( new OffHeapString( name ), ret );
+        }
+        return ret;
     }
 
     /* Map methods */
