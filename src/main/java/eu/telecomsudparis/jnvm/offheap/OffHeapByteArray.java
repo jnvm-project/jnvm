@@ -21,6 +21,8 @@ public class OffHeapByteArray
     private static final long indexScale = Byte.BYTES;
     private static final long baseOffset = SIZE;
 
+    private int hash;
+
     public long length() { return getLongField( offsets[0] ); }
     private void setLength(long length) { setLongField( offsets[0], length); }
 
@@ -133,6 +135,49 @@ public class OffHeapByteArray
                 }
             }
         };
+    }
+
+    @Override
+    public int hashCode() {
+        int h = hash;
+        long length = length();
+        if( h == 0 && length > 0 ) {
+            for(int i=0; i < length; i++) {
+               h = 31 * h + get( i );
+            }
+            hash = h;
+        }
+        return h;
+    }
+
+    @Override
+    public boolean equals(Object anObject) {
+        System.out.println("toto");
+        if( this == anObject ) {
+            return true;
+        }
+        if( anObject instanceof OffHeapByteArray ) {
+            OffHeapByteArray anOHByteArray = (OffHeapByteArray)anObject;
+            long n = length();
+            if( n == anOHByteArray.length() ) {
+                for(long i=0; i<n; i++) {
+                    if( this.get(i) != anOHByteArray.get(i) )
+                        return false;
+                }
+                return true;
+            }
+        } else if( anObject instanceof byte[] ) {
+            byte[] anByteArray = (byte[])anObject;
+            long n = length();
+            if( n == anByteArray.length ) {
+                for(int i=0; i<n; i++) {
+                    if( this.get(i) != anByteArray[i] )
+                        return false;
+                }
+                return true;
+            }
+        }
+        return false;
     }
 
     /* Set methods */
