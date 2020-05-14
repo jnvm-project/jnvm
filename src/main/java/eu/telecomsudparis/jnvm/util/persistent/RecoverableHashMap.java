@@ -165,7 +165,7 @@ public class RecoverableHashMap<K extends OffHeapObject, V extends OffHeapObject
 
     public V remove(Object key) {
         Long idx; V oldValue = null;
-        if( (idx = index.get( key )) == null ) {
+        if( (idx = index.get( key )) != null ) {
             oldValue = table.remove( idx ).getValue();
             index.remove( key );
         }
