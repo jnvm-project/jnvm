@@ -38,13 +38,13 @@ public class OffHeap {
         G(6, RecoverableStrongHashMap.class),
         H(7, RecoverableStrongHashMap.OffHeapNode.class);
 
-        private static final Map<Class<?>, Klass> BY_NAME = new HashMap<>();
-        private static final Map<Long, Klass> BY_ID = new HashMap<>();
+        private static final Map<Class<?>, Long> BY_NAME = new HashMap<>();
+        private static final Map<Long, Class<?>> BY_ID = new HashMap<>();
 
         static {
             for( OffHeap.Klass ohc : values()){
-                BY_NAME.put( ohc.klazz, ohc );
-                BY_ID.put( ohc.classId, ohc );
+                BY_NAME.put( ohc.klazz, ohc.classId );
+                BY_ID.put( ohc.classId, ohc.klazz );
             }
         }
 
@@ -57,11 +57,21 @@ public class OffHeap {
         }
 
         public static Class<?> klazz(long classId) {
-            return BY_ID.get( classId ).klazz;
+            return BY_ID.get( classId );
         }
 
         public static long register(Class<?> klass) {
-            return BY_NAME.get( klass ).classId;
+            return BY_NAME.get( klass );
+        }
+
+        public static long registerUserKlass(Class<?> klass) {
+            Long klassId = BY_NAME.get( klass );
+            if( klassId == null ) {
+                klassId = 8L;
+                BY_NAME.put( klass, klassId );
+                BY_ID.put( klassId, klass );
+            }
+            return klassId;
         }
     }
 
@@ -76,7 +86,7 @@ public class OffHeap {
         allocator = MemoryAllocator.recover( pool.address(), pool.limit() );
         //TODO Store OffHeap state, including offsets to our objects, in a metablock.
         if( allocator.top() == 0 ) {
-            rootInstances = new RecoverableHashMap(30);
+            rootInstances = new RecoverableHashMap(10);
         } else {
             rootInstances = new RecoverableHashMap( baseAddr() + ROOT_INSTANCES );
         }
