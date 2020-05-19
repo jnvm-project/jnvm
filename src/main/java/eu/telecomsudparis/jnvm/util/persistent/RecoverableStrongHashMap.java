@@ -112,8 +112,9 @@ public class RecoverableStrongHashMap<K extends OffHeapObject, V extends OffHeap
             //K entryKey = entry.getKey();
             //V entryValue = entry.getValue();
             //index.put( entryKey, i );
-            index.put( table.get( i ).getKey(), i );
-            cacheTable.add( (int) i, table.get( i ) );
+            OffHeapNode<K,V> ohnode = table.get( i );
+            index.put( ohnode.getKey(), i );
+            cacheTable.add( (int) i, ohnode );
         }
         /*
         table.forEach( entry -> index.put( entry.getKey(), entry.getValue() ) );
