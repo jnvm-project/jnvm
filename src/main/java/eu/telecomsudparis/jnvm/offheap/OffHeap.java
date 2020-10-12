@@ -78,8 +78,8 @@ public class OffHeap {
     static {
         //TODO Factory design where pools are known from cfg file and lazily
         //     loaded as Heap instance is requested to Heap factory.
-        String path = properties.getProperty("jnvm.heap.path");
-        long size = Long.parseLong( properties.getProperty("jnvm.heap.size") );
+        String path = properties.getProperty(Environment.JNVM_HEAP_PATH);
+        long size = Long.parseLong( properties.getProperty(Environment.JNVM_HEAP_SIZE) );
 
         instances = new WeakHashMap<>();
         pool = MemoryPool.open( path, size );
