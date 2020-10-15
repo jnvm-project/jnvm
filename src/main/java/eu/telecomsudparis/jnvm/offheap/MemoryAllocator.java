@@ -1,7 +1,9 @@
 package eu.telecomsudparis.jnvm.offheap;
 
-import java.util.LinkedList;
-import java.util.HashMap;
+import java.util.Map;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
@@ -12,16 +14,16 @@ public class MemoryAllocator implements Iterable<MemoryBlockHandle> {
     private transient long offset = -1;
 
     private transient long totalMemory;
-    private transient LinkedList<MemoryBlockHandle> reclaimed;
-    private transient HashMap<Long, MemoryBlockHandle> mappings;
+    private transient Queue<MemoryBlockHandle> reclaimed;
+    private transient Map<Long, MemoryBlockHandle> mappings;
     //TODO Can get rid of mappings, as long as MemoryBlocks are interchangeable
 
     //Constructor
     private MemoryAllocator(long offset, long limit) {
         this.totalMemory = limit - BASE;
         this.offset = offset;
-        this.reclaimed = new LinkedList<>();
-        this.mappings = new HashMap<>();
+        this.reclaimed = new ConcurrentLinkedDeque<>();
+        this.mappings = new ConcurrentHashMap<>();
     }
 
     //Reconstructor
@@ -34,6 +36,7 @@ public class MemoryAllocator implements Iterable<MemoryBlockHandle> {
                 //Invalidate when new version is ready but old was not dismissed
                 block.free();
             }
+
             if( !block.isValid() ) {
                 allocator.reclaimed.add( block );
             } else if( !block.isMultiBlock() ) {
@@ -69,18 +72,15 @@ public class MemoryAllocator implements Iterable<MemoryBlockHandle> {
 
     //Instance Methods
     public MemoryBlockHandle allocateBlock() {
-        MemoryBlockHandle block = null;
-        if( reclaimed.size() > 0 ) {
-            block = reclaimed.remove();
-        } else {
-            long blockOffset = top();
-            unsafe.putLong( offset + TOP, blockOffset + block.size() );
+        MemoryBlockHandle block = reclaimed.poll();
+        if( block == null ) {
+            long blockOffset = unsafe.getAndAddLong( null, offset + TOP, block.size() );
             block = new MemoryBlockHandle( offset + BASE + blockOffset );
         }
         block.init();
         block.commit();
 
-        unsafe.putLong( offset + SIZE, this.size() + block.size() );
+        unsafe.getAndAddLong( null, offset + SIZE, block.size() );
 
         //mappings.put( block.getOffset(), block );
 
@@ -90,7 +90,7 @@ public class MemoryAllocator implements Iterable<MemoryBlockHandle> {
     public void freeBlock(MemoryBlockHandle block) {
         block.free();
 
-        unsafe.putLong( offset + SIZE, this.size() - block.size() );
+        unsafe.getAndAddLong( null, offset + SIZE, -block.size() );
 
         reclaimed.add( block );
     }
