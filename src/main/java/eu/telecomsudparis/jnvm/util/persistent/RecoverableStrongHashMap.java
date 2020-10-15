@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.Collection;
 import java.util.AbstractMap;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.LongStream;
 
 import eu.telecomsudparis.jnvm.offheap.MemoryBlockHandle;
 import eu.telecomsudparis.jnvm.offheap.OffHeapObjectHandle;
@@ -97,7 +98,27 @@ public class RecoverableStrongHashMap<K extends OffHeapObject, V extends OffHeap
         long length = table.length();
         index = new ConcurrentHashMap<>( (int) length );
 
-        for( long i=0; i<length; i++ ) {
+        final int threadCount = 10;
+        final int idxPerThread = ((int) length) / threadCount ;
+
+        LongStream.range(0, threadCount).parallel().forEach( i -> {
+            for( long k=i*idxPerThread; k<(i+1)*idxPerThread; k++ ) {
+              OffHeapNode<K,V> entry = table.get( k );
+              index.put( entry.getKey(), entry );
+            }
+        } );
+
+/*
+        LongStream.range(0, length).parallel().forEach( i -> {
+            OffHeapNode<K,V> entry = table.get( i );
+            index.put( entry.getKey(), entry );
+        } );
+*/
+
+        //System.out.println(table.length());
+        //System.out.println(this.size());
+
+        //for( long i=0; i<length; i++ ) {
             /*
             OffHeapNode<K,V> entry = null; K entryKey = null;
                 entry = table.get( i );
@@ -116,9 +137,9 @@ public class RecoverableStrongHashMap<K extends OffHeapObject, V extends OffHeap
             //K entryKey = entry.getKey();
             //V entryValue = entry.getValue();
             //index.put( entryKey, i );
-            OffHeapNode<K,V> ohnode = table.get( i );
-            index.put( ohnode.getKey(), ohnode );
-        }
+       //     OffHeapNode<K,V> ohnode = table.get( i );
+       //     index.put( ohnode.getKey(), ohnode );
+       // }
         /*
         table.forEach( entry -> index.put( entry.getKey(), entry.getValue() ) );
         */
