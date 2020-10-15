@@ -46,15 +46,14 @@ public class OffHeapCharArray
 
     //Convertor
     // Naive
-    /*
     public OffHeapCharArray(char[] value) {
         this( value.length );
         for( int i=0; i < value.length; i++ ) {
             setElem( i, value[i] );
         }
     }
-    */
     // Unsafe
+    /*
     public OffHeapCharArray(char[] value) {
         this( value.length );
         long[] bases = this.getBases();
@@ -69,6 +68,7 @@ public class OffHeapCharArray
             iter++;
         }
     }
+    */
 
     public char[] toArray() {
         char[] value = new char[ (int) length() ];
