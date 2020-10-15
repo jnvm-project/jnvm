@@ -34,6 +34,10 @@ public interface OffHeapObject {
         unsafe.putLong( addressFromFieldOffset( fieldOffset ), value );
     }
 
+    default long getAndAddLongField(long fieldOffset, long delta) {
+        return unsafe.getAndAddLong( null, addressFromFieldOffset( fieldOffset ), delta );
+    }
+
     default long getLongField(long fieldOffset) {
         return unsafe.getLong( addressFromFieldOffset( fieldOffset ) );
     }
