@@ -2,10 +2,9 @@ package eu.telecomsudparis.jnvm.util.persistent;
 
 import java.util.Set;
 import java.util.Map;
-import java.util.HashMap;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.AbstractMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 import eu.telecomsudparis.jnvm.offheap.MemoryBlockHandle;
 import eu.telecomsudparis.jnvm.offheap.OffHeapObjectHandle;
@@ -22,8 +21,7 @@ public class RecoverableStrongHashMap<K extends OffHeapObject, V extends OffHeap
 
     private static final int DEFAULT_SIZE = 16;
 
-    private transient HashMap<K,Long> index;
-    private transient ArrayList<OffHeapNode<K,V>> cacheTable;
+    private transient Map<K,OffHeapNode<K,V>> index;
     private OffHeapArray<OffHeapNode<K,V>> table;
 
     public static class OffHeapNode<K extends OffHeapObject, V extends OffHeapObject>
@@ -86,9 +84,8 @@ public class RecoverableStrongHashMap<K extends OffHeapObject, V extends OffHeap
     }
 
     public RecoverableStrongHashMap(int initialSize) {
-        index = new HashMap<>( initialSize );
+        index = new ConcurrentHashMap<>( initialSize );
         table = new OffHeapArray<>( initialSize );
-        cacheTable = new ArrayList<>( initialSize );
         //OffHeap.Instances.put(table.getOffset(), this);
         OffHeap.getAllocator().blockFromOffset( table.getOffset() ).setKlass( CLASS_ID );
     }
@@ -98,8 +95,7 @@ public class RecoverableStrongHashMap<K extends OffHeapObject, V extends OffHeap
         table = (OffHeapArray<OffHeapNode<K,V>>)OffHeapArray.rec( offset );
         //OffHeap.instances.put(table.getOffset(), this);
         long length = table.length();
-        index = new HashMap<>( (int) length );
-        cacheTable = new ArrayList<>( (int) length );
+        index = new ConcurrentHashMap<>( (int) length );
 
         for( long i=0; i<length; i++ ) {
             /*
@@ -121,8 +117,7 @@ public class RecoverableStrongHashMap<K extends OffHeapObject, V extends OffHeap
             //V entryValue = entry.getValue();
             //index.put( entryKey, i );
             OffHeapNode<K,V> ohnode = table.get( i );
-            index.put( ohnode.getKey(), i );
-            cacheTable.add( (int) i, ohnode );
+            index.put( ohnode.getKey(), ohnode );
         }
         /*
         table.forEach( entry -> index.put( entry.getKey(), entry.getValue() ) );
@@ -175,40 +170,39 @@ public class RecoverableStrongHashMap<K extends OffHeapObject, V extends OffHeap
     }
 
     public V put(K key, V value) {
-        Long idx; V oldValue = null;
-        if( (idx = index.get( key )) == null ) {
-            OffHeapNode<K,V> entry = new OffHeapNode<>( key, value );
-            idx = table.add( entry );
-            cacheTable.add( idx.intValue(), entry );
-            index.put( key, idx );
+        OffHeapNode<K,V> entry = null; V oldValue = null;
+        if( (entry = index.get( key )) == null ) {
+            entry = new OffHeapNode<>( key, value );
+            table.add( entry );
+            index.put( key, entry );
         } else {
-            oldValue = table.get( idx ).setValue( value );
+            oldValue = entry.setValue( value );
         }
         return oldValue;
     }
 
     public V replace(Object key, V value) {
-        Long idx; V oldValue = null;
-        if( ( idx = index.get( key ) ) != null ) {
-            oldValue = table.get( idx ).setValue( value );
+        OffHeapNode<K,V> entry = null; V oldValue = null;
+        if( ( entry = index.get( key ) ) != null ) {
+            oldValue = entry.setValue( value );
         }
         return oldValue;
     }
 
     public V get(Object key) {
-        Long idx;
-        if( ( idx = index.get( key ) ) != null ) {
-            return cacheTable.get( idx.intValue() ).getValue();
+        OffHeapNode<K,V> entry = null;
+        if( ( entry = index.get( key ) ) != null ) {
+            return entry.getValue();
         }
         return null;
     }
 
     public V remove(Object key) {
-        Long idx; V oldValue = null;
-        if( (idx = index.get( key )) != null ) {
-            oldValue = table.remove( idx ).getValue();
-            cacheTable.remove( idx );
+        OffHeapNode<K,V> entry = null; V oldValue = null;
+        if( (entry = index.get( key )) != null ) {
+            oldValue = entry.getValue();
             index.remove( key );
+            //TODO: remove node from OffHeap table
         }
         return oldValue;
     }
@@ -223,7 +217,6 @@ public class RecoverableStrongHashMap<K extends OffHeapObject, V extends OffHeap
     public void clear() {
         table.clear();
         index.clear();
-        cacheTable.clear();
     }
 
     /* AbstractMap methods */
