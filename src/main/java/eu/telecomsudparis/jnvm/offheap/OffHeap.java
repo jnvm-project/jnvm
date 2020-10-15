@@ -64,10 +64,10 @@ public class OffHeap {
             return BY_NAME.get( klass );
         }
 
-        public static long registerUserKlass(Class<?> klass) {
+        public static long registerUserKlass(Class<?> klass, long id) {
             Long klassId = BY_NAME.get( klass );
             if( klassId == null ) {
-                klassId = 8L;
+                klassId = id;
                 BY_NAME.put( klass, klassId );
                 BY_ID.put( klassId, klass );
             }
