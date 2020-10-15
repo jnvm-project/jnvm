@@ -42,12 +42,36 @@ public interface OffHeapObject {
         return unsafe.getLong( addressFromFieldOffset( fieldOffset ) );
     }
 
+    default int getIntegerField(long fieldOffset) {
+        return unsafe.getInt( addressFromFieldOffset( fieldOffset ) );
+    }
+
+    default void setIntegerField(long fieldOffset, int value) {
+        unsafe.putInt( addressFromFieldOffset( fieldOffset ), value );
+    }
+
+    default double getDoubleField(long fieldOffset) {
+        return unsafe.getDouble( addressFromFieldOffset( fieldOffset ) );
+    }
+
+    default void setDoubleField(long fieldOffset, double value) {
+        unsafe.putDouble( addressFromFieldOffset( fieldOffset ), value );
+    }
+
     default void setHandleField(long fieldOffset, OffHeapObject ohoh) {
         setLongField( fieldOffset, ohoh.getOffset() - OffHeap.baseAddr() );
     }
 
     default OffHeapObject getHandleField(long fieldOffset) {
         return OffHeap.instanceFromOffset( OffHeap.baseAddr() + getLongField( fieldOffset ) );
+    }
+
+    default String getStringField(long fieldOffset) {
+        return getHandleField( fieldOffset ).toString();
+    }
+
+    default void setStringField(long fieldOffset, String str) {
+        setHandleField( fieldOffset, new OffHeapString(str) );
     }
 
     //Unsafe mechanics
