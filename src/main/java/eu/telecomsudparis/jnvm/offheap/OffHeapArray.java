@@ -26,6 +26,7 @@ public class OffHeapArray<E extends OffHeapObjectHandle>
 
     public long length() { return getLongField( offsets[0] ); }
     private void setLength(long length) { setLongField( offsets[0], length); }
+    private long incLength(long delta) { return getAndAddLongField( offsets[0], delta); }
 
     private void reset() { setLength( 0L ); }
     private static final long elemOffset(long index) { return baseOffset + index * indexScale; }
@@ -75,9 +76,8 @@ public class OffHeapArray<E extends OffHeapObjectHandle>
     }
 
     public long add(E e) {
-        long index = length();
+        long index = incLength( 1 );
         setElem( index, e );
-        setLength( index + 1 );
         return index;
     }
 
