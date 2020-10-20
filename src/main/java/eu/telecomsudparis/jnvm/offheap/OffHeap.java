@@ -23,20 +23,22 @@ public class OffHeap {
     public transient static final Map<Long, OffHeapObject> instances;
 
     //TODO Have a proper metablock layout declaration
-    private static final long ROOT_INSTANCES = 16;
+    private static final long METABLOCK = 16;
+    private static final Metablock metablock;
     public static final RecoverableHashMap<OffHeapString, OffHeapObject> rootInstances;
 
     //TODO Generate this from all classes extending OffHeapObject
     //     and the one existing on the memory pool metablock
     public enum Klass {
-        A(0, OffHeapArray.class),
-        B(1, OffHeapCharArray.class),
-        C(2, OffHeapByteArray.class),
-        D(3, OffHeapString.class),
-        E(4, RecoverableHashMap.class),
-        F(5, RecoverableHashMap.OffHeapNode.class),
-        G(6, RecoverableStrongHashMap.class),
-        H(7, RecoverableStrongHashMap.OffHeapNode.class);
+        A(0, Metablock.class),
+        B(1, OffHeapArray.class),
+        C(2, OffHeapCharArray.class),
+        D(3, OffHeapByteArray.class),
+        E(4, OffHeapString.class),
+        F(5, RecoverableHashMap.class),
+        G(6, RecoverableHashMap.OffHeapNode.class),
+        H(7, RecoverableStrongHashMap.class),
+        I(8, RecoverableStrongHashMap.OffHeapNode.class);
 
         private static final Map<Class<?>, Long> BY_NAME = new HashMap<>();
         private static final Map<Long, Class<?>> BY_ID = new HashMap<>();
@@ -75,6 +77,22 @@ public class OffHeap {
         }
     }
 
+    private static class Metablock extends OffHeapObjectHandle {
+        private static final long CLASS_ID = OffHeap.Klass.register( OffHeap.Metablock.class );
+
+        private static final long[] offsets = { 0 };
+        private static final long SIZE = 8;
+
+        Metablock() { super(); }
+        Metablock(long offset) { super( offset ); }
+        Metablock setRoot(RecoverableHashMap root) { setHandleField( offsets[0], root ); return this; }
+        RecoverableHashMap getRoot() { return (RecoverableHashMap) getHandleField( offsets[0] ); }
+
+        public long size() { return SIZE; }
+        public long classId() { return CLASS_ID; }
+
+    }
+
     static {
         //TODO Factory design where pools are known from cfg file and lazily
         //     loaded as Heap instance is requested to Heap factory.
@@ -86,9 +104,12 @@ public class OffHeap {
         allocator = MemoryAllocator.recover( pool.address(), pool.limit() );
         //TODO Store OffHeap state, including offsets to our objects, in a metablock.
         if( allocator.top() == 0 ) {
+            metablock = new Metablock();
             rootInstances = new RecoverableHashMap(10);
+            metablock.setRoot( rootInstances );
         } else {
-            rootInstances = new RecoverableHashMap( baseAddr() + ROOT_INSTANCES );
+            metablock = new Metablock( baseAddr() + METABLOCK );
+            rootInstances = metablock.getRoot();
         }
         //Eager object pointer mapping initialization
         //TODO iterate over MemoryPool and fill instances hash table
