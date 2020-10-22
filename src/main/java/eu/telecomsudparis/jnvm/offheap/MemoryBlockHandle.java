@@ -142,6 +142,10 @@ public class MemoryBlockHandle {
         return SIZE;
     }
 
+    public static void copy(long dest, long src) {
+        unsafe.copyMemory( src, dest, SIZE );
+    }
+
     //Instance methods
     public MemoryBlockHandle next() {
         return ( ! hasNext() ) ? null :
