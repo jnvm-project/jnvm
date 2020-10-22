@@ -26,6 +26,8 @@ public class OffHeap {
     private static final long METABLOCK = 16;
     private static final Metablock metablock;
     public static final RecoverableHashMap<OffHeapString, OffHeapObject> rootInstances;
+    private static final OffHeapRedoLog log;
+
 
     //TODO Generate this from all classes extending OffHeapObject
     //     and the one existing on the memory pool metablock
@@ -84,13 +86,15 @@ public class OffHeap {
     private static class Metablock extends OffHeapObjectHandle {
         private static final long CLASS_ID = OffHeap.Klass.register( OffHeap.Metablock.class );
 
-        private static final long[] offsets = { 0 };
-        private static final long SIZE = 8;
+        private static final long[] offsets = { 0, 8 };
+        private static final long SIZE = 16;
 
         Metablock() { super(); }
         Metablock(long offset) { super( offset ); }
         Metablock setRoot(RecoverableHashMap root) { setHandleField( offsets[0], root ); return this; }
+        Metablock setLog(OffHeapRedoLog log) { setHandleField( offsets[1], log ); return this; }
         RecoverableHashMap getRoot() { return (RecoverableHashMap) getHandleField( offsets[0] ); }
+        OffHeapRedoLog getLog() { return (OffHeapRedoLog) getHandleField( offsets[1] ); }
 
         public long size() { return SIZE; }
         public long classId() { return CLASS_ID; }
@@ -110,10 +114,13 @@ public class OffHeap {
         if( allocator.top() == 0 ) {
             metablock = new Metablock();
             rootInstances = new RecoverableHashMap(10);
-            metablock.setRoot( rootInstances );
+            log = new OffHeapRedoLog();
+            metablock.setRoot( rootInstances )
+                     .setLog( log );
         } else {
             metablock = new Metablock( baseAddr() + METABLOCK );
             rootInstances = metablock.getRoot();
+            log = metablock.getLog();
         }
         //Eager object pointer mapping initialization
         //TODO iterate over MemoryPool and fill instances hash table
