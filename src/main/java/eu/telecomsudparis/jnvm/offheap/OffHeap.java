@@ -136,7 +136,8 @@ public class OffHeap {
         throw new UnsupportedOperationException();
     }
 
-    public static MemoryAllocator getAllocator() { return allocator; }
+    public static final MemoryAllocator getAllocator() { return allocator; }
+    public static final OffHeapRedoLog getLog() { return log; }
     public static long baseAddr() { return pool.address(); }
 
     //Constructor
