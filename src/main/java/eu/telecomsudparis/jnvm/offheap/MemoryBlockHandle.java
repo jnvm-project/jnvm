@@ -29,6 +29,7 @@ public class MemoryBlockHandle {
         public static final long VALIDITY   = 0x0000_0000_0000_0001L; // 0
         public static final long FORWARD    = 0x0000_0000_0000_0002L; // 1
         public static final long MULTIBLOCK = 0x0000_0000_0000_0004L; // 2
+        public static final long RECORDABLE = 0x0000_0000_0000_0002L; // 3
 
         //Value masks
         public static final long KLASS      = 0x0000_0000_0000_0F00L; // 8  - 11
@@ -101,6 +102,10 @@ public class MemoryBlockHandle {
         return getFlag( getHeader(), Header.MULTIBLOCK );
     }
 
+    public boolean isRecordable() {
+        return getFlag( getHeader(), Header.RECORDABLE );
+    }
+
     public long getKlass() {
         return getValue( getHeader(), Header.oKLASS, Header.KLASS );
     }
@@ -123,6 +128,10 @@ public class MemoryBlockHandle {
 
     public void setMultiBlock(boolean value) {
         replaceHeaderFlag( value, Header.MULTIBLOCK );
+    }
+
+    public void setRecordable(boolean value) {
+        replaceHeaderFlag( value, Header.RECORDABLE );
     }
 
     public void setKlass(long klass) {
