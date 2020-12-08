@@ -27,6 +27,7 @@ public class OffHeap {
     private static final Metablock metablock;
     public static final RecoverableHashMap<OffHeapString, OffHeapObject> rootInstances;
     private static final OffHeapRedoLog log;
+    public static boolean recording = false;
 
 
     //TODO Generate this from all classes extending OffHeapObject
@@ -197,6 +198,16 @@ public class OffHeap {
         allocator.freeMemory( k.getOffset(), k.size() );
         k.detach();
         //instances.remove( k.getOffset() );
+    }
+
+    public static void startRecording() {
+        log.clear();
+        recording = true;
+    }
+
+    public static void stopRecording() {
+        recording = false;
+        log.redo();
     }
 
 }
