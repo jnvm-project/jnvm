@@ -67,13 +67,13 @@ public class OffHeapRedoLog implements OffHeapObject {
         public void apply() { getBlock().commit(); }
     }
 
-    public static class UnvalidateEntry extends Entry {
-        private static final long CLASS_ID = OffHeap.Klass.register( OffHeapRedoLog.UnvalidateEntry.class );
+    public static class InvalidateEntry extends Entry {
+        private static final long CLASS_ID = OffHeap.Klass.register( OffHeapRedoLog.InvalidateEntry.class );
 
         private long block;
 
-        UnvalidateEntry(long block) { super( block ); }
-        UnvalidateEntry(MemoryBlockHandle block) { super( block ); }
+        InvalidateEntry(long block) { super( block ); }
+        InvalidateEntry(MemoryBlockHandle block) { super( block ); }
 
         public long classId() { return CLASS_ID; }
 
@@ -105,8 +105,8 @@ public class OffHeapRedoLog implements OffHeapObject {
     public void logValidate(long block) {
         table.add( new ValidateEntry( block ) );
     }
-    public void logUnvalidate(long block) {
-        table.add( new UnvalidateEntry( block ) );
+    public void logInvalidate(long block) {
+        table.add( new InvalidateEntry( block ) );
     }
 
     public void redo() {

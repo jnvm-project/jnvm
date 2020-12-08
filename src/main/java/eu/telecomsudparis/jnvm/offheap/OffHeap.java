@@ -44,7 +44,7 @@ public class OffHeap {
         J(9, OffHeapRedoLog.class),
         K(10, OffHeapRedoLog.CopyEntry.class),
         L(11, OffHeapRedoLog.ValidateEntry.class),
-        M(12, OffHeapRedoLog.UnvalidateEntry.class);
+        M(12, OffHeapRedoLog.InvalidateEntry.class);
 
         private static final Map<Class<?>, Long> BY_NAME = new HashMap<>();
         private static final Map<Long, Class<?>> BY_ID = new HashMap<>();
