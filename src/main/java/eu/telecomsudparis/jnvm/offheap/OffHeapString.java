@@ -89,9 +89,14 @@ public class OffHeapString implements OffHeapObject {
     public long size() { return value.size(); }
     public long classId() { return CLASS_ID; }
     public long length() { return value.length(); }
-    public long addressFromFieldOffset(long fieldOffset) {
-        return value.addressFromFieldOffset( fieldOffset );
+    public long addressFromFieldOffsetRO(long fieldOffset) {
+        return value.addressFromFieldOffsetRO( fieldOffset );
     }
+    public long addressFromFieldOffsetRW(long fieldOffset) {
+        return value.addressFromFieldOffsetRW( fieldOffset );
+    }
+    public void validate() { value.validate(); }
+    public void invalidate() { value.invalidate(); }
     public void destroy() { value.destroy(); }
 
 }

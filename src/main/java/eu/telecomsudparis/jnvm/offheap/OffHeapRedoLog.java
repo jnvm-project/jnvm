@@ -122,9 +122,14 @@ public class OffHeapRedoLog implements OffHeapObject {
     public void detach() { table.detach(); }
     public long classId() { return CLASS_ID; }
     public long length() { return table.length(); }
-    public long addressFromFieldOffset(long fieldOffset) {
-        return table.addressFromFieldOffset( fieldOffset );
+    public long addressFromFieldOffsetRO(long fieldOffset) {
+        return table.addressFromFieldOffsetRO( fieldOffset );
     }
+    public long addressFromFieldOffsetRW(long fieldOffset) {
+        return table.addressFromFieldOffsetRW( fieldOffset );
+    }
+    public void validate() { table.validate(); }
+    public void invalidate() { table.invalidate(); }
     public void destroy() { table.destroy(); }
 
 }

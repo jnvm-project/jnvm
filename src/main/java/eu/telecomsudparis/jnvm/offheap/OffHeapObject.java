@@ -9,53 +9,56 @@ public interface OffHeapObject {
     void attach(long offset);
     void detach();
     void destroy();
+    void validate();
+    void invalidate();
     long classId();
 
-    long addressFromFieldOffset(long fieldOffset);
+    long addressFromFieldOffsetRO(long fieldOffset);
+    long addressFromFieldOffsetRW(long fieldOffset);
 
     //Data manipulation methods
     default void setByteField(long fieldOffset, byte value) {
-        unsafe.putByte( addressFromFieldOffset( fieldOffset ), value );
+        unsafe.putByte( addressFromFieldOffsetRW( fieldOffset ), value );
     }
 
     default byte getByteField(long fieldOffset) {
-        return unsafe.getByte( addressFromFieldOffset( fieldOffset ) );
+        return unsafe.getByte( addressFromFieldOffsetRO( fieldOffset ) );
     }
 
     default void setCharField(long fieldOffset, char value) {
-        unsafe.putChar( addressFromFieldOffset( fieldOffset ), value );
+        unsafe.putChar( addressFromFieldOffsetRW( fieldOffset ), value );
     }
 
     default char getCharField(long fieldOffset) {
-        return unsafe.getChar( addressFromFieldOffset( fieldOffset ) );
+        return unsafe.getChar( addressFromFieldOffsetRO( fieldOffset ) );
     }
 
     default void setLongField(long fieldOffset, long value) {
-        unsafe.putLong( addressFromFieldOffset( fieldOffset ), value );
+        unsafe.putLong( addressFromFieldOffsetRW( fieldOffset ), value );
     }
 
     default long getAndAddLongField(long fieldOffset, long delta) {
-        return unsafe.getAndAddLong( null, addressFromFieldOffset( fieldOffset ), delta );
+        return unsafe.getAndAddLong( null, addressFromFieldOffsetRW( fieldOffset ), delta );
     }
 
     default long getLongField(long fieldOffset) {
-        return unsafe.getLong( addressFromFieldOffset( fieldOffset ) );
+        return unsafe.getLong( addressFromFieldOffsetRO( fieldOffset ) );
     }
 
     default int getIntegerField(long fieldOffset) {
-        return unsafe.getInt( addressFromFieldOffset( fieldOffset ) );
+        return unsafe.getInt( addressFromFieldOffsetRO( fieldOffset ) );
     }
 
     default void setIntegerField(long fieldOffset, int value) {
-        unsafe.putInt( addressFromFieldOffset( fieldOffset ), value );
+        unsafe.putInt( addressFromFieldOffsetRW( fieldOffset ), value );
     }
 
     default double getDoubleField(long fieldOffset) {
-        return unsafe.getDouble( addressFromFieldOffset( fieldOffset ) );
+        return unsafe.getDouble( addressFromFieldOffsetRO( fieldOffset ) );
     }
 
     default void setDoubleField(long fieldOffset, double value) {
-        unsafe.putDouble( addressFromFieldOffset( fieldOffset ), value );
+        unsafe.putDouble( addressFromFieldOffsetRW( fieldOffset ), value );
     }
 
     default void setHandleField(long fieldOffset, OffHeapObject ohoh) {

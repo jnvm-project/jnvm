@@ -8,6 +8,7 @@ public abstract class OffHeapBigObjectHandle implements OffHeapObject {
     protected static final long BYTES_PER_BASE = MemoryBlockHandle.size() - 8 - 8;
     private transient long offset = -1L;
     private transient long[] bases = null;
+    private transient long[] faBases = null;
 
     //Constructor
     public OffHeapBigObjectHandle(long size) {
@@ -36,8 +37,43 @@ public abstract class OffHeapBigObjectHandle implements OffHeapObject {
         return this.bases;
     }
 
-    public long addressFromFieldOffset(long fieldOffset) {
-        return bases[ (int) ( fieldOffset / BYTES_PER_BASE ) ] + fieldOffset % BYTES_PER_BASE + 8;
+    protected MemoryBlockHandle block() {
+        return OffHeap.getAllocator().blockFromOffset( this.offset );
+    }
+
+    public long addressFromFieldOffsetRO(long fieldOffset) {
+        return ( OffHeap.recording && block().isRecordable() )
+            ? addressFromFieldOffsetFARO( fieldOffset )
+            : bases[ (int) ( fieldOffset / BYTES_PER_BASE ) ] + fieldOffset % BYTES_PER_BASE + 8;
+    }
+
+    public long addressFromFieldOffsetRW(long fieldOffset) {
+        return ( OffHeap.recording && block().isRecordable() )
+            ? addressFromFieldOffsetFARW( fieldOffset )
+            : bases[ (int) ( fieldOffset / BYTES_PER_BASE ) ] + fieldOffset % BYTES_PER_BASE + 8;
+    }
+
+    private long addressFromFieldOffsetFARO(long fieldOffset) {
+        long b;
+        if( faBases != null && (b=faBases[ (int) ( fieldOffset / BYTES_PER_BASE ) ]) != 0 )
+            return b + fieldOffset % BYTES_PER_BASE + 8;
+        else
+            return bases[ (int) ( fieldOffset / BYTES_PER_BASE ) ] + fieldOffset % BYTES_PER_BASE + 8;
+    }
+
+    private long addressFromFieldOffsetFARW(long fieldOffset) {
+        long b;
+        if( faBases == null )
+            faBases = new long[ bases.length ];
+        if( (b=faBases[ (int) ( fieldOffset / BYTES_PER_BASE ) ]) == 0 ) {
+            MemoryBlockHandle block = OffHeap.getAllocator().allocateBlock();
+            long old = this.bases[ (int) ( fieldOffset / BYTES_PER_BASE ) ] - 8;
+            MemoryBlockHandle.copy( block.getOffset(), old );
+            faBases[(int) ( fieldOffset / BYTES_PER_BASE )] = block.base();
+            OffHeap.getLog().logCopy( old, block.getOffset() );
+            b = block.base();
+        }
+        return b + fieldOffset % BYTES_PER_BASE + 8;
     }
 
     //Instance methods
@@ -71,6 +107,27 @@ public abstract class OffHeapBigObjectHandle implements OffHeapObject {
     public void detach() {
         this.offset = -1L;
         this.bases = null;
+        this.faBases = null;
+        block().setRecordable( false );
+    }
+
+    public void validate() {
+        if( OffHeap.recording ) {
+            block().setRecordable( false );
+            OffHeap.getLog().logValidate( this.offset );
+        } else {
+            block().setRecordable( true );
+            block().commit();
+        }
+    }
+
+    public void invalidate() {
+        block().setRecordable( false );
+        if( OffHeap.recording ) {
+            OffHeap.getLog().logInvalidate( this.offset );
+        } else {
+            this.destroy();
+        }
     }
 
     public abstract long size();
