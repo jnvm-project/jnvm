@@ -113,14 +113,14 @@ public class OffHeap {
         //TODO Store OffHeap state, including offsets to our objects, in a metablock.
         if( allocator.top() == 0 ) {
             metablock = new Metablock();
+            log = new OffHeapRedoLog( 50 );
             rootInstances = new RecoverableHashMap(10);
-            log = new OffHeapRedoLog();
             metablock.setRoot( rootInstances )
                      .setLog( log );
         } else {
             metablock = new Metablock( baseAddr() + METABLOCK );
-            rootInstances = metablock.getRoot();
             log = metablock.getLog();
+            rootInstances = metablock.getRoot();
         }
         //Eager object pointer mapping initialization
         //TODO iterate over MemoryPool and fill instances hash table
