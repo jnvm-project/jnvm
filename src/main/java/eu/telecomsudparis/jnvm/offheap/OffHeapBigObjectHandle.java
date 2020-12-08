@@ -9,6 +9,7 @@ public abstract class OffHeapBigObjectHandle implements OffHeapObject {
     private transient long offset = -1L;
     private transient long[] bases = null;
     private transient long[] faBases = null;
+    //private transient boolean recordable = false;
 
     //Constructor
     public OffHeapBigObjectHandle(long size) {
@@ -82,6 +83,7 @@ public abstract class OffHeapBigObjectHandle implements OffHeapObject {
         long nblocks = size / BYTES_PER_BASE + 1;
         this.bases = new long[ (int) nblocks ];
         this.offset = offset;
+        //this.recordable = block().isRecordable();
         long off = offset;
         for(int i=0; i<bases.length; i++) {
             MemoryBlockHandle block = OffHeap.getAllocator().blockFromOffset( off );

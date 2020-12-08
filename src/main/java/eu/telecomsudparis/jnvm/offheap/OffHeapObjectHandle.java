@@ -8,6 +8,7 @@ public abstract class OffHeapObjectHandle implements OffHeapObject {
     private transient long offset = -1L;
     private transient long base = -1L;
     private transient long faBase = -1L;
+    //private transient boolean recordable = false;
 
     //Constructor
     public OffHeapObjectHandle() {
@@ -69,6 +70,7 @@ public abstract class OffHeapObjectHandle implements OffHeapObject {
     public void attach(long offset) {
         this.offset = offset;
         this.base = block().base();
+        //this.recordable = block().isValid();
         block().setKlass( classId() );
     }
 
