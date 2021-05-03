@@ -3,7 +3,7 @@ package eu.telecomsudparis.jnvm.offheap;
 import eu.telecomsudparis.jnvm.offheap.OffHeap;
 
 
-public class OffHeapString implements OffHeapObject {
+public class OffHeapString implements OffHeapObject, Comparable<OffHeapString> {
 
     private static final long CLASS_ID = OffHeap.Klass.register( OffHeapString.class );
 
@@ -67,10 +67,9 @@ public class OffHeapString implements OffHeapObject {
         } else if( anObject instanceof String ) {
             String anString = (String)anObject;
             long n = value.length();
-            char v2[] = anString.toCharArray();
-            if( n == v2.length ) {
+            if( n == anString.length() ) {
                 for(int i=0; i<n; i++) {
-                    if( this.value.get(i) != v2[i] )
+                    if( this.value.get(i) != anString.charAt(i) )
                         return false;
                 }
                 return true;
@@ -81,6 +80,40 @@ public class OffHeapString implements OffHeapObject {
 
     public char charAt(long index) {
         return value.get( index );
+    }
+
+    public int compareTo(OffHeapString anotherString) {
+        long len1 = this.value.length();
+        long len2 = anotherString.value.length();
+        long lim = Math.min( len1, len2 );
+
+        long k = 0;
+        while( k < lim ) {
+            char c1 = this.value.get(k);
+            char c2 = anotherString.value.get(k);
+            if( c1 != c2 ) {
+                return c1 - c2;
+            }
+            k++;
+        }
+        return (int)( len1 - len2 );
+    }
+
+    public int compareTo(String anotherString) {
+        int len1 = (int) this.value.length();
+        int len2 = anotherString.length();
+        int lim = Math.min( len1, len2 );
+
+        int k = 0;
+        while( k < lim ) {
+            char c1 = this.value.get(k);
+            char c2 = anotherString.charAt(k);
+            if( c1 != c2 ) {
+                return c1 - c2;
+            }
+            k++;
+        }
+        return len1 - len2;
     }
 
     public long getOffset() { return value.getOffset(); }
