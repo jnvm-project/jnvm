@@ -159,6 +159,7 @@ public class RecoverableStrongHashMap<K extends OffHeapObject, V extends OffHeap
         } else {
           ret = new RecoverableStrongHashMap( initialSize );
           OffHeap.rootInstances.put( new OffHeapString( name ), ret );
+          ret.validate();
         }
         return ret;
     }
@@ -196,6 +197,7 @@ public class RecoverableStrongHashMap<K extends OffHeapObject, V extends OffHeap
             entry = new OffHeapNode<>( key, value );
             table.add( entry );
             index.put( key, entry );
+            entry.validate();
         } else {
             oldValue = entry.setValue( value );
         }
