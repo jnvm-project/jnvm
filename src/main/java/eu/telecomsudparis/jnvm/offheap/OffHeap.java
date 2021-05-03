@@ -118,6 +118,8 @@ public class OffHeap {
         instances = new WeakHashMap<>();
         pool = MemoryPool.open( path, size );
         allocator = MemoryAllocator.recover( pool.address(), pool.limit() );
+        //allocator = new MemoryAllocator( pool.address(), pool.limit() );
+        //MemoryAllocator.recover( allocator );
         //TODO Store OffHeap state, including offsets to our objects, in a metablock.
         if( allocator.top() == 0 ) {
             metablock = new Metablock();
