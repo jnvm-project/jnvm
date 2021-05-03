@@ -32,12 +32,14 @@ public class MemoryBlockHandle {
         public static final long RECORDABLE = 0x0000_0000_0000_0008L; // 3
 
         //Value masks
-        public static final long KLASS      = 0x0000_0000_0000_0F00L; // 8  - 11
+        public static final long KLASS      = 0x0000_0000_0000_0FF0L; // 4  - 11
+        //public static final long KLASS      = 0x0000_0000_0000_0F00L; // 8  - 11
         public static final long BSIZE      = 0x0000_0000_0000_F000L; // 12 - 15
         public static final long NEXT       = 0xFFFF_FFFF_FFFF_0000L; // 16 - 63
 
         //Value offsets
-        public static final long oKLASS     = 8L;
+        public static final long oKLASS     = 4L;
+        //public static final long oKLASS     = 8L;
         public static final long oBSIZE     = 12L;
         public static final long oNEXT      = 16L;
     }
