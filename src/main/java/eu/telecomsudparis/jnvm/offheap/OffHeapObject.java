@@ -77,6 +77,11 @@ public interface OffHeapObject {
         setHandleField( fieldOffset, new OffHeapString(str) );
     }
 
+    default OffHeapObject unique() {
+        OffHeap.instances.put( getOffset(), this );
+        return this;
+    }
+
     //Unsafe mechanics
     sun.misc.Unsafe unsafe = net.bramp.unsafe.UnsafeHelper.getUnsafe();
 
