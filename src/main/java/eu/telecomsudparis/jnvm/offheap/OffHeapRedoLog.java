@@ -13,39 +13,23 @@ public class OffHeapRedoLog implements OffHeapObject {
 
     private OffHeapArray<Entry> table;
 
-    public static abstract class Entry extends OffHeapObjectHandle {
-        final static long[] offsets = { 0 };
-        final static long SIZE = 8;
-
-        //Constructor
-        Entry(long block) {
-            super();
-            setLongField( offsets[0], block );
-        }
-        //Reconstructor
-        Entry(MemoryBlockHandle block) { super( block.getOffset() ); }
-
-        public long size() { return SIZE; }
-
-        public final MemoryBlockHandle getBlock() {
-            return OffHeap.getAllocator()
-                          .blockFromOffset( getLongField( offsets[0] ));
-        }
-        public abstract void apply();
+    private interface Entry extends OffHeapObject {
+        void apply();
     }
 
-    public static class CopyEntry extends Entry {
+    public static class CopyEntry extends OffHeapObjectHandle implements Entry {
         private static final long CLASS_ID = OffHeap.Klass.register( OffHeapRedoLog.CopyEntry.class );
         final static long[] offsets = { 0, 8 };
         final static long SIZE = 16;
 
         //Constructor
         CopyEntry(long orig, long copy) {
-            super( orig );
+            super();
+            setLongField( offsets[0], orig );
             setLongField( offsets[1], copy );
         }
         //Reconstructor
-        CopyEntry(MemoryBlockHandle block) { super( block ); }
+        public CopyEntry(MemoryBlockHandle block) { super( block.getOffset() ); }
 
         @Override
         public long size() { return SIZE; }
@@ -56,28 +40,58 @@ public class OffHeapRedoLog implements OffHeapObject {
         public void apply() { MemoryBlockHandle.copy(getOld(), getNew()); }
     }
 
-    public static class ValidateEntry extends Entry {
+    public static class ValidateEntry extends OffHeapObjectHandle implements Entry {
         private static final long CLASS_ID = OffHeap.Klass.register( OffHeapRedoLog.ValidateEntry.class );
+        final static long[] offsets = { 0 };
+        final static long SIZE = 8;
 
-        ValidateEntry(long block) { super( block ); }
-        ValidateEntry(MemoryBlockHandle block) { super( block ); }
+/*
+        ValidateEntry(OffHeapObject oho) {
+            super();
+            setHandleField( offsets[0], oho );
+        }
+*/
+        ValidateEntry(long block) {
+            super();
+            setLongField( offsets[0], block );
+        }
+        public ValidateEntry(MemoryBlockHandle block) { super( block.getOffset() ); }
 
+        public long size() { return SIZE; }
         public long classId() { return CLASS_ID; }
 
-        public void apply() { getBlock().commit(); }
+        public final MemoryBlockHandle getBlock() {
+            return OffHeap.getAllocator()
+                          .blockFromOffset( getLongField( offsets[0] ));
+        }
+        public void apply() { getBlock().commit(); getBlock().setRecordable( true ); }
+//        public void apply() { getHandleField( offsets[0] ).validate(); }
     }
 
-    public static class InvalidateEntry extends Entry {
+    public static class InvalidateEntry extends OffHeapObjectHandle implements Entry {
         private static final long CLASS_ID = OffHeap.Klass.register( OffHeapRedoLog.InvalidateEntry.class );
+        final static long[] offsets = { 0 };
+        final static long SIZE = 8;
 
         private long block;
 
-        InvalidateEntry(long block) { super( block ); }
-        InvalidateEntry(MemoryBlockHandle block) { super( block ); }
+        InvalidateEntry(OffHeapObject oho) {
+            super();
+            setHandleField( offsets[0], oho );
+        }
+        public InvalidateEntry(MemoryBlockHandle block) { super( block.getOffset() ); }
 
+        public long size() { return SIZE; }
         public long classId() { return CLASS_ID; }
 
+/*
+        public final MemoryBlockHandle getBlock() {
+            return OffHeap.getAllocator()
+                          .blockFromOffset( getLongField( offsets[0] ));
+        }
         public void apply() { getBlock().init(); }
+*/
+        public void apply() { getHandleField( offsets[0] ).invalidate(); }
     }
 
     //Constructor
@@ -102,18 +116,25 @@ public class OffHeapRedoLog implements OffHeapObject {
     public void logCopy(long orig, long copy) {
         table.add( new CopyEntry( orig, copy ) );
     }
-    public void logValidate(long block) {
-        table.add( new ValidateEntry( block ) );
+    public void logValidate(OffHeapObject oho) {
+        table.add( new ValidateEntry( oho.getOffset() ) );
     }
-    public void logInvalidate(long block) {
-        table.add( new InvalidateEntry( block ) );
+    public void logInvalidate(OffHeapObject oho) {
+        table.add( new InvalidateEntry( oho ) );
     }
 
     public void redo() {
+/*
+        for( long i=0; i<table.length(); i++ ) {
+            Entry e = table.get(i);
+            e.apply();
+        }
+*/
         table.forEach( Entry::apply );
     }
 
     public void clear() {
+        table.forEach( e -> e.destroy() );
         table.clear();
     }
 
