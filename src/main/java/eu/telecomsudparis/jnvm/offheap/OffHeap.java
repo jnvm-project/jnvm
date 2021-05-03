@@ -38,14 +38,15 @@ public class OffHeap {
         C(2, OffHeapCharArray.class),
         D(3, OffHeapByteArray.class),
         E(4, OffHeapString.class),
-        F(5, RecoverableHashMap.class),
-        G(6, RecoverableHashMap.OffHeapNode.class),
-        H(7, RecoverableStrongHashMap.class),
-        I(8, RecoverableStrongHashMap.OffHeapNode.class),
-        J(9, OffHeapRedoLog.class),
-        K(10, OffHeapRedoLog.CopyEntry.class),
-        L(11, OffHeapRedoLog.ValidateEntry.class),
-        M(12, OffHeapRedoLog.InvalidateEntry.class);
+        F(5, OffHeapCachedString.class),
+        G(6, RecoverableHashMap.class),
+        H(7, RecoverableHashMap.OffHeapNode.class),
+        I(8, RecoverableStrongHashMap.class),
+        J(9, RecoverableStrongHashMap.OffHeapNode.class),
+        K(10, OffHeapRedoLog.class),
+        L(11, OffHeapRedoLog.CopyEntry.class),
+        M(12, OffHeapRedoLog.ValidateEntry.class),
+        N(13, OffHeapRedoLog.InvalidateEntry.class);
 
         private static final Map<Class<?>, Long> BY_NAME = new HashMap<>();
         private static final Map<Long, Class<?>> BY_ID = new HashMap<>();

@@ -7,21 +7,20 @@ public class OffHeapString implements OffHeapObject, Comparable<OffHeapString> {
 
     private static final long CLASS_ID = OffHeap.Klass.register( OffHeapString.class );
 
-    private final OffHeapCharArray value;
-    private transient int hash;
+    protected final OffHeapCharArray value;
+    protected transient int hash;
 
     //Constructors
-    public OffHeapString(OffHeapString original) {
-        this.value = original.value;
-        this.hash = original.hash;
+    protected OffHeapString(char[] original) {
+        this.value = new OffHeapCharArray( original );
+        //OffHeap.instances.put(value.getOffset(), this);
+        OffHeap.getAllocator().blockFromOffset( value.getOffset() ).setKlass( CLASS_ID );
     }
 
     //Convertor
     public OffHeapString(String original) {
-        this.value = new OffHeapCharArray( original.toCharArray() );
+        this( original.toCharArray() );
         this.hash = original.hashCode();
-        //OffHeap.instances.put(value.getOffset(), this);
-        OffHeap.getAllocator().blockFromOffset( value.getOffset() ).setKlass( CLASS_ID );
     }
 
     public String toString() {
