@@ -169,8 +169,11 @@ public class MemoryBlockHandle {
         setHeader( clearFlag( getHeader(), Header.VALIDITY ) );
     }
 
+    public void clear() {
+        unsafe.setMemory( offset, size(), (byte) 0 );
+    }
+
     public void init() {
-        //unsafe.setMemory( offset, size(), (byte) 0 );
         setHeader( 0L );
     }
 
