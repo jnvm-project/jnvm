@@ -114,7 +114,7 @@ public class OffHeap {
         //TODO Store OffHeap state, including offsets to our objects, in a metablock.
         if( allocator.top() == 0 ) {
             metablock = new Metablock();
-            log = new OffHeapRedoLog( 50 );
+            log = new OffHeapRedoLog( 100 );
             rootInstances = new RecoverableHashMap(10);
             metablock.setRoot( rootInstances )
                      .setLog( log );
