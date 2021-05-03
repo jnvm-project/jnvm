@@ -9,7 +9,7 @@ public abstract class OffHeapBigObjectHandle implements OffHeapObject {
     private transient long offset = -1L;
     private transient long[] bases = null;
     private transient long[] faBases = null;
-    //private transient boolean recordable = false;
+    private transient boolean recordable = false;
 
     //Constructor
     public OffHeapBigObjectHandle(long size) {
@@ -43,13 +43,13 @@ public abstract class OffHeapBigObjectHandle implements OffHeapObject {
     }
 
     public long addressFromFieldOffsetRO(long fieldOffset) {
-        return ( OffHeap.recording && block().isRecordable() )
+        return ( OffHeap.recording && recordable )
             ? addressFromFieldOffsetFARO( fieldOffset )
             : bases[ (int) ( fieldOffset / BYTES_PER_BASE ) ] + fieldOffset % BYTES_PER_BASE + 8;
     }
 
     public long addressFromFieldOffsetRW(long fieldOffset) {
-        return ( OffHeap.recording && block().isRecordable() )
+        return ( OffHeap.recording && recordable )
             ? addressFromFieldOffsetFARW( fieldOffset )
             : bases[ (int) ( fieldOffset / BYTES_PER_BASE ) ] + fieldOffset % BYTES_PER_BASE + 8;
     }
@@ -83,7 +83,7 @@ public abstract class OffHeapBigObjectHandle implements OffHeapObject {
         long nblocks = size / BYTES_PER_BASE + 1;
         this.bases = new long[ (int) nblocks ];
         this.offset = offset;
-        //this.recordable = block().isRecordable();
+        this.recordable = block().isRecordable();
         long off = offset;
         for(int i=0; i<bases.length; i++) {
             MemoryBlockHandle block = OffHeap.getAllocator().blockFromOffset( off );
@@ -107,26 +107,30 @@ public abstract class OffHeapBigObjectHandle implements OffHeapObject {
     }
 
     public void detach() {
+        //block().setRecordable( false );
+        this.recordable = false;
         this.offset = -1L;
         this.bases = null;
         this.faBases = null;
-        block().setRecordable( false );
     }
 
     public void validate() {
         if( OffHeap.recording ) {
-            block().setRecordable( false );
-            OffHeap.getLog().logValidate( this.offset );
+            //block().setRecordable( false );
+            this.recordable = false;
+            OffHeap.getLog().logValidate( this );
         } else {
+            this.recordable = true;
             block().setRecordable( true );
             block().commit();
         }
     }
 
     public void invalidate() {
-        block().setRecordable( false );
+        //block().setRecordable( false );
+        //this.recordable = false;
         if( OffHeap.recording ) {
-            OffHeap.getLog().logInvalidate( this.offset );
+            OffHeap.getLog().logInvalidate( this );
         } else {
             this.destroy();
         }
