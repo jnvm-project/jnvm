@@ -7,26 +7,29 @@ import java.lang.UnsupportedOperationException;
 import java.util.NoSuchElementException;
 
 
-public class OffHeapArray<E extends OffHeapObjectHandle>
+public class OffHeapArray<E extends OffHeapObject>
         extends OffHeapBigObjectHandle implements Iterable<E> {
 
     private static final long CLASS_ID = OffHeap.Klass.register( OffHeapArray.class );
 
     /* PMEM Layout :
-     *  | Index | Offset | Bytes | Name   |
-     *  |-------+--------+-------+--------|
-     *  | 0     | 0      | 8     | length |
-     *  end: 8 bytes
+     *  | Index | Offset | Bytes | Name     |
+     *  |-------+--------+-------+----------|
+     *  | 0     | 0      | 8     | capacity |
+     *  | 1     | 8      | 8     | length   |
+     *  end: 16 bytes
      */
-    private final static long[] offsets = { 0L };
-    private static final long SIZE = 8;
+    private final static long[] offsets = { 0L, 8L };
+    private static final long SIZE = 16;
 
     private static final long indexScale = Long.BYTES;
     private static final long baseOffset = SIZE;
 
-    public long length() { return getLongField( offsets[0] ); }
-    private void setLength(long length) { setLongField( offsets[0], length); }
-    private long incLength(long delta) { return getAndAddLongField( offsets[0], delta); }
+    private long capacity() { return getLongField( offsets[0] ); }
+    private void setCapacity(long capacity) { setLongField( offsets[0], capacity ); }
+    public long length() { return getLongField( offsets[1] ); }
+    private void setLength(long length) { setLongField( offsets[1], length); }
+    private long incLength(long delta) { return getAndAddLongField( offsets[1], delta); }
 
     private void reset() { setLength( 0L ); }
     private static final long elemOffset(long index) { return baseOffset + index * indexScale; }
@@ -38,6 +41,7 @@ public class OffHeapArray<E extends OffHeapObjectHandle>
     public OffHeapArray(long capacity) {
         super( computeSize( capacity ) );
         reset();
+        setCapacity( capacity );
     }
 
     //Reconstructor
@@ -110,6 +114,11 @@ public class OffHeapArray<E extends OffHeapObjectHandle>
             public boolean hasNext() { return cursor < end; }
             public E next() {
                 if( hasNext() ) {
+/*
+                    E e = getElem( cursor );
+                    cursor += 1;
+                    return e;
+*/
                     return getElem( cursor++ );
                 } else {
                     throw new NoSuchElementException();
