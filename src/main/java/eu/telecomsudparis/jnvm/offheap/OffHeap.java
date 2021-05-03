@@ -7,6 +7,8 @@ import java.util.ArrayList;
 import eu.telecomsudparis.jnvm.config.Environment;
 import eu.telecomsudparis.jnvm.util.persistent.RecoverableHashMap;
 import eu.telecomsudparis.jnvm.util.persistent.RecoverableStrongHashMap;
+import eu.telecomsudparis.jnvm.util.persistent.RecoverableStrongTreeMap;
+import eu.telecomsudparis.jnvm.util.persistent.RecoverableStrongSkipListMap;
 
 import java.util.Map;
 import java.util.HashMap;
@@ -43,10 +45,14 @@ public class OffHeap {
         H(7, RecoverableHashMap.OffHeapNode.class),
         I(8, RecoverableStrongHashMap.class),
         J(9, RecoverableStrongHashMap.OffHeapNode.class),
-        K(10, OffHeapRedoLog.class),
-        L(11, OffHeapRedoLog.CopyEntry.class),
-        M(12, OffHeapRedoLog.ValidateEntry.class),
-        N(13, OffHeapRedoLog.InvalidateEntry.class);
+        K(10, RecoverableStrongTreeMap.class),
+        L(11, RecoverableStrongTreeMap.OffHeapNode.class),
+        M(12, RecoverableStrongSkipListMap.class),
+        N(13, RecoverableStrongSkipListMap.OffHeapNode.class),
+        O(14, OffHeapRedoLog.class),
+        P(15, OffHeapRedoLog.CopyEntry.class),
+        Q(16, OffHeapRedoLog.ValidateEntry.class),
+        R(17, OffHeapRedoLog.InvalidateEntry.class);
 
         private static final Map<Class<?>, Long> BY_NAME = new HashMap<>();
         private static final Map<Long, Class<?>> BY_ID = new HashMap<>();
