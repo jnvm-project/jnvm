@@ -158,7 +158,8 @@ public class MemoryBlockHandle {
     //Instance methods
     public MemoryBlockHandle next() {
         return ( ! hasNext() ) ? null :
-            OffHeap.getAllocator().blockFromOffset( getNext() );
+            new MemoryBlockHandle( getNext() );
+            //OffHeap.getAllocator().blockFromOffset( getNext() );
     }
 
     public void commit() {
