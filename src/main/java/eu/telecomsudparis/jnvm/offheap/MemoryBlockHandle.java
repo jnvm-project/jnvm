@@ -29,7 +29,7 @@ public class MemoryBlockHandle {
         public static final long VALIDITY   = 0x0000_0000_0000_0001L; // 0
         public static final long FORWARD    = 0x0000_0000_0000_0002L; // 1
         public static final long MULTIBLOCK = 0x0000_0000_0000_0004L; // 2
-        public static final long RECORDABLE = 0x0000_0000_0000_0002L; // 3
+        public static final long RECORDABLE = 0x0000_0000_0000_0008L; // 3
 
         //Value masks
         public static final long KLASS      = 0x0000_0000_0000_0F00L; // 8  - 11
