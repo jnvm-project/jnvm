@@ -17,7 +17,7 @@ import eu.telecomsudparis.jnvm.offheap.OffHeap;
 
 
 public class RecoverableStrongTreeMap<K extends OffHeapObject, V extends OffHeapObject>
-        extends AbstractMap<K,V> implements PersistentMap<K,V>, OffHeapObject {
+        extends AbstractMap<K,V> implements RecoverableMap<K,V> {
 
     private static final long CLASS_ID = OffHeap.Klass.register( RecoverableStrongTreeMap.class );
 
@@ -210,7 +210,7 @@ public class RecoverableStrongTreeMap<K extends OffHeapObject, V extends OffHeap
         return oldValue;
     }
 
-    public V replace(Object key, V value) {
+    public V replaceValue(Object key, V value) {
         OffHeapNode<K,V> entry = null; V oldValue = null;
         if( ( entry = index.get( key ) ) != null ) {
             oldValue = entry.setValue( value );

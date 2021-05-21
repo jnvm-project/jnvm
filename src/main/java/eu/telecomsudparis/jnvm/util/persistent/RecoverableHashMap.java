@@ -15,7 +15,7 @@ import eu.telecomsudparis.jnvm.offheap.OffHeap;
 
 
 public class RecoverableHashMap<K extends OffHeapObject, V extends OffHeapObject>
-        extends AbstractMap<K,V> implements PersistentMap<K,V>, OffHeapObject {
+        extends AbstractMap<K,V> implements RecoverableMap<K,V> {
 
     private static final long CLASS_ID = OffHeap.Klass.register( RecoverableHashMap.class );
 
@@ -163,7 +163,7 @@ public class RecoverableHashMap<K extends OffHeapObject, V extends OffHeapObject
         return oldValue;
     }
 
-    public V replace(Object key, V value) {
+    public V replaceValue(Object key, V value) {
         Long idx; V oldValue = null;
         if( ( idx = index.get( key ) ) != null ) {
             oldValue = table.get( idx ).setValue( value );
