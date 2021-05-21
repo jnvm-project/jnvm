@@ -289,5 +289,6 @@ public class RecoverableStrongSkipListMap<K extends OffHeapObject, V extends Off
     public void validate() { table.validate(); }
     public void invalidate() { table.invalidate(); }
     public void destroy() { table.destroy(); }
+    public void flush() { table.flush(); }
 
 }

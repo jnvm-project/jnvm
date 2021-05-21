@@ -246,5 +246,6 @@ public class RecoverableHashMap<K extends OffHeapObject, V extends OffHeapObject
     public void validate() { table.validate(); }
     public void invalidate() { table.invalidate(); }
     public void destroy() { table.destroy(); }
+    public void flush() { table.flush(); }
 
 }

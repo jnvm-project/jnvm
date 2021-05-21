@@ -104,6 +104,10 @@ public abstract class OffHeapObjectHandle implements OffHeapObject {
         }
     }
 
+    public void flush() {
+        unsafe.writebackMemory( base - 8, size() + 8 );
+    }
+
     public abstract long size();
 
     //Java.lang.Object overrides
@@ -119,5 +123,7 @@ public abstract class OffHeapObjectHandle implements OffHeapObject {
         }
         return false;
     }
+
+    protected static final sun.misc.Unsafe unsafe = net.bramp.unsafe.UnsafeHelper.getUnsafe();
 
 }

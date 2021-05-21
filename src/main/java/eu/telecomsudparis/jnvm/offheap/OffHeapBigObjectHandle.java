@@ -136,6 +136,18 @@ public abstract class OffHeapBigObjectHandle implements OffHeapObject {
         }
     }
 
+    public void flush() {
+        final long blockSize = MemoryBlockHandle.size();
+        long flushSize = size() + bases.length * 16;
+        int i=0;
+        while( flushSize >= blockSize ) {
+            unsafe.writebackMemory( bases[i] - 8, blockSize );
+            i++;
+            flushSize -= blockSize;
+        }
+        unsafe.writebackMemory( bases[i] - 8, flushSize );
+    }
+
     public abstract long size();
     public abstract long indexScale();
     public abstract long baseOffset();
@@ -153,5 +165,7 @@ public abstract class OffHeapBigObjectHandle implements OffHeapObject {
         }
         return false;
     }
+
+    protected static final sun.misc.Unsafe unsafe = net.bramp.unsafe.UnsafeHelper.getUnsafe();
 
 }

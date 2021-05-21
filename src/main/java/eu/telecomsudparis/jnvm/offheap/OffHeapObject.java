@@ -11,6 +11,7 @@ public interface OffHeapObject {
     void destroy();
     void validate();
     void invalidate();
+    void flush();
     long classId();
 
     long addressFromFieldOffsetRO(long fieldOffset);
