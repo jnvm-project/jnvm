@@ -9,6 +9,7 @@ import eu.telecomsudparis.jnvm.util.persistent.RecoverableHashMap;
 import eu.telecomsudparis.jnvm.util.persistent.RecoverableStrongHashMap;
 import eu.telecomsudparis.jnvm.util.persistent.RecoverableStrongTreeMap;
 import eu.telecomsudparis.jnvm.util.persistent.RecoverableStrongSkipListMap;
+import eu.telecomsudparis.jnvm.util.persistent.AutoPersistMap;
 
 import java.util.Map;
 import java.util.HashMap;
@@ -49,10 +50,11 @@ public class OffHeap {
         L(11, RecoverableStrongTreeMap.OffHeapNode.class),
         M(12, RecoverableStrongSkipListMap.class),
         N(13, RecoverableStrongSkipListMap.OffHeapNode.class),
-        O(14, OffHeapRedoLog.class),
-        P(15, OffHeapRedoLog.CopyEntry.class),
-        Q(16, OffHeapRedoLog.ValidateEntry.class),
-        R(17, OffHeapRedoLog.InvalidateEntry.class);
+        O(14, AutoPersistMap.class),
+        P(15, OffHeapRedoLog.class),
+        Q(16, OffHeapRedoLog.CopyEntry.class),
+        R(17, OffHeapRedoLog.ValidateEntry.class),
+        S(18, OffHeapRedoLog.InvalidateEntry.class);
 
         private static final Map<Class<?>, Long> BY_NAME = new HashMap<>();
         private static final Map<Long, Class<?>> BY_ID = new HashMap<>();
