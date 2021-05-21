@@ -122,7 +122,7 @@ public class MemoryAllocator implements Iterable<MemoryBlockHandle> {
         do {
             //MemoryBlockHandle block = mappings.remove( off );
             MemoryBlockHandle block = new MemoryBlockHandle( off );
-            off = unsafe.getLong( block.base() );
+            off = OffHeap.baseAddr() + unsafe.getLong( block.base() );
             freeBlock( block );
             nblocks--;
         } while( nblocks > 0 );
