@@ -135,6 +135,15 @@ public class OffHeapCharArray
         return this;
     }
 
+    public OffHeapCharArray copy() {
+        long len = this.length();
+        OffHeapCharArray ret = new OffHeapCharArray( len );
+        for( long i=0; i<len; i++) {
+            ret.setElem( i, this.getElem(i) );
+        }
+        return ret;
+    }
+
     //Iterable methods
     public Iterator<Character> iterator() {
         return new Iterator() {

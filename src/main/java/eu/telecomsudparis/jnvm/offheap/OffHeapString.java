@@ -17,6 +17,12 @@ public class OffHeapString implements OffHeapObject, Comparable<OffHeapString> {
         OffHeap.getAllocator().blockFromOffset( value.getOffset() ).setKlass( CLASS_ID );
     }
 
+    public OffHeapString(OffHeapCharArray value) {
+        this.value = value;
+        //OffHeap.instances.put(value.getOffset(), this);
+        OffHeap.getAllocator().blockFromOffset( value.getOffset() ).setKlass( CLASS_ID );
+    }
+
     //Convertor
     public OffHeapString(String original) {
         this( original.toCharArray() );
@@ -79,6 +85,10 @@ public class OffHeapString implements OffHeapObject, Comparable<OffHeapString> {
 
     public char charAt(long index) {
         return value.get( index );
+    }
+
+    public OffHeapString copy() {
+        return new OffHeapString( this.value.copy() );
     }
 
     public int compareTo(OffHeapString anotherString) {
