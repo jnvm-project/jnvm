@@ -15,6 +15,7 @@ import eu.telecomsudparis.jnvm.util.persistent.AutoPersistMap;
 
 import java.util.Map;
 import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.WeakHashMap;
 import java.lang.reflect.Constructor;
 
@@ -59,8 +60,8 @@ public class OffHeap {
         R(17, OffHeapRedoLog.ValidateEntry.class),
         S(18, OffHeapRedoLog.InvalidateEntry.class);
 
-        private static final Map<Class<?>, Long> BY_NAME = new HashMap<>();
-        private static final Map<Long, Class<?>> BY_ID = new HashMap<>();
+        private static final Map<Class<?>, Long> BY_NAME = new ConcurrentHashMap<>();
+        private static final Map<Long, Class<?>> BY_ID = new ConcurrentHashMap<>();
 
         static {
             for( OffHeap.Klass ohc : values()){
