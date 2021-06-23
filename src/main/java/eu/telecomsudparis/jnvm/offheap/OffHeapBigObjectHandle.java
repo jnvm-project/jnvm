@@ -153,6 +153,7 @@ public abstract class OffHeapBigObjectHandle implements OffHeapObject {
     public abstract long baseOffset();
 
     public boolean mark() {
+        //System.out.println(this);
         boolean set = OffHeap.gcMark( bases[0] - 8 );
         if( !set ) {
             for( int i=1; i<bases.length; i++ ) {

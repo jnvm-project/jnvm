@@ -109,10 +109,12 @@ public class RecoverableStrongHashMap<K extends OffHeapObject, V extends OffHeap
         final int threadCount = ( length < 10 ) ? 1 : 10;
         final int idxPerThread = ((int) length) / threadCount ;
 
+        //LongStream.range(0, threadCount).forEach( i -> {
         LongStream.range(0, threadCount).parallel().forEach( i -> {
             for( long k=i*idxPerThread; k<(i+1)*idxPerThread; k++ ) {
               OffHeapNode<K,V> entry = table.get( k );
               index.put( entry.getKey(), entry );
+              //System.out.println("titi");
             }
         } );
 

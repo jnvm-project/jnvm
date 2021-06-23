@@ -111,6 +111,7 @@ public abstract class OffHeapObjectHandle implements OffHeapObject {
     public abstract long size();
 
     public boolean mark() {
+        //System.out.println(this);
         return OffHeap.gcMark( this.offset );
     }
     public abstract void descend();

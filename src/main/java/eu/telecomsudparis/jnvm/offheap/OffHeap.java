@@ -228,6 +228,7 @@ public class OffHeap {
             k.attach( block.getOffset() );
             //instances.put( k.getOffset(), k );
         } catch(Exception e) {
+            e.printStackTrace(System.out);
         }
         return k;
     }
@@ -280,15 +281,20 @@ public class OffHeap {
     public static void gcMarkNoCheck(long offset) {
         int idx = (int)(( offset - baseAddr() ) / MemoryBlockHandle.size() );
         marks.set( idx );
+        //System.out.println(marks.cardinality());
     }
 
     public static void gcStartMarking() {
+        System.out.println("Starting marking");
+        long start = System.nanoTime();
         if( !metablock.mark() )
             metablock.descend();
         if( !log.mark() )
             log.descend();
         if( !rootInstances.mark() )
             rootInstances.descend();
+        long end = System.nanoTime();
+        System.out.println("Marking finished in (nsec): " + (end - start) );
     }
 
 }
