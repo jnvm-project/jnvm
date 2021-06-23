@@ -33,6 +33,7 @@ public class OffHeap {
     private static final long METABLOCK = 16;
     private static final Metablock metablock;
     public static final RecoverableMap<OffHeapString, OffHeapObject> rootInstances;
+    private static final OffHeapArray<OffHeapString> userKlasses;
     private static final OffHeapRedoLog log;
     public static boolean recording = false;
 
@@ -86,29 +87,56 @@ public class OffHeap {
             return BY_NAME.get( klass );
         }
 
-        public static long registerUserKlass(Class<?> klass, long id) {
+        private static long userKlassOffset(long userKlassId) {
+            return userKlassId + Klass.values().length;
+        }
+
+        private static void registerUserKlass(Class<?> klass, long klassId) {
+            BY_NAME.put( klass, klassId );
+            BY_ID.put( klassId, klass );
+        }
+
+        public static long registerUserKlass(Class<?> klass) {
             Long klassId = BY_NAME.get( klass );
             if( klassId == null ) {
-                klassId = id;
-                BY_NAME.put( klass, klassId );
-                BY_ID.put( klassId, klass );
+                OffHeapString ohs = new OffHeapString( klass.getName() );
+                Long userKlassId = userKlasses.add( ohs );
+                klassId = userKlassOffset( userKlassId );
+                registerUserKlass( klass, klassId );
             }
             return klassId;
+        }
+
+        private static void loadUserKlasses(OffHeapArray<OffHeapString> userKlasses) {
+            ClassLoader loader = OffHeap.class.getClassLoader();
+            for( int i=0; i<userKlasses.length(); i++ ){
+                OffHeapString ohs = userKlasses.get( i );
+                Class<?> klazz = null;
+                try {
+                    klazz = loader.loadClass( ohs.toString() );
+                } catch(Exception e) {
+                    e.printStackTrace(System.out);
+                }
+                Long klassId = userKlassOffset( i );
+                registerUserKlass( klazz, klassId );
+            }
         }
     }
 
     private static class Metablock extends OffHeapObjectHandle {
         private static final long CLASS_ID = OffHeap.Klass.register( OffHeap.Metablock.class );
 
-        private static final long[] offsets = { 0, 8 };
-        private static final long SIZE = 16;
+        private static final long[] offsets = { 0, 8, 16 };
+        private static final long SIZE = 24;
 
         Metablock() { super(); }
         Metablock(long offset) { super( offset ); }
         Metablock setRoot(RecoverableMap root) { setHandleField( offsets[0], root ); return this; }
         Metablock setLog(OffHeapRedoLog log) { setHandleField( offsets[1], log ); return this; }
+        Metablock setUserKlasses(OffHeapArray userK) { setHandleField( offsets[2], userK ); return this; }
         RecoverableMap getRoot() { return (RecoverableMap) getHandleField( offsets[0] ); }
         OffHeapRedoLog getLog() { return (OffHeapRedoLog) getHandleField( offsets[1] ); }
+        OffHeapArray getUserKlasses() { return (OffHeapArray) getHandleField( offsets[2] ); }
 
         public long size() { return SIZE; }
         public long classId() { return CLASS_ID; }
@@ -140,11 +168,15 @@ public class OffHeap {
             metablock = new Metablock();
             log = new OffHeapRedoLog( 100 );
             rootInstances = new RecoverableStrongHashMap( 10 );
+            userKlasses = new OffHeapArray( 10 );
             metablock.setRoot( rootInstances )
+                     .setUserKlasses( userKlasses )
                      .setLog( log );
         } else {
             metablock = new Metablock( baseAddr() + METABLOCK );
             log = metablock.getLog();
+            userKlasses = metablock.getUserKlasses();
+            OffHeap.Klass.loadUserKlasses( userKlasses );
             rootInstances = metablock.getRoot();
         }
         //Eager object pointer mapping initialization
