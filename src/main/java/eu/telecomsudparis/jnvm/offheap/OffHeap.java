@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.BitSet;
 
 import eu.telecomsudparis.jnvm.config.Environment;
+import eu.telecomsudparis.jnvm.util.persistent.RecoverableMap;
 import eu.telecomsudparis.jnvm.util.persistent.RecoverableHashMap;
 import eu.telecomsudparis.jnvm.util.persistent.RecoverableStrongHashMap;
 import eu.telecomsudparis.jnvm.util.persistent.RecoverableStrongTreeMap;
@@ -30,7 +31,7 @@ public class OffHeap {
     //TODO Have a proper metablock layout declaration
     private static final long METABLOCK = 16;
     private static final Metablock metablock;
-    public static final RecoverableStrongHashMap<OffHeapString, OffHeapObject> rootInstances;
+    public static final RecoverableMap<OffHeapString, OffHeapObject> rootInstances;
     private static final OffHeapRedoLog log;
     public static boolean recording = false;
 
@@ -103,9 +104,9 @@ public class OffHeap {
 
         Metablock() { super(); }
         Metablock(long offset) { super( offset ); }
-        Metablock setRoot(RecoverableStrongHashMap root) { setHandleField( offsets[0], root ); return this; }
+        Metablock setRoot(RecoverableMap root) { setHandleField( offsets[0], root ); return this; }
         Metablock setLog(OffHeapRedoLog log) { setHandleField( offsets[1], log ); return this; }
-        RecoverableStrongHashMap getRoot() { return (RecoverableStrongHashMap) getHandleField( offsets[0] ); }
+        RecoverableMap getRoot() { return (RecoverableMap) getHandleField( offsets[0] ); }
         OffHeapRedoLog getLog() { return (OffHeapRedoLog) getHandleField( offsets[1] ); }
 
         public long size() { return SIZE; }
@@ -137,7 +138,7 @@ public class OffHeap {
         if( allocator.top() == 0 ) {
             metablock = new Metablock();
             log = new OffHeapRedoLog( 100 );
-            rootInstances = new RecoverableStrongHashMap(10);
+            rootInstances = new RecoverableStrongHashMap( 10 );
             metablock.setRoot( rootInstances )
                      .setLog( log );
         } else {
