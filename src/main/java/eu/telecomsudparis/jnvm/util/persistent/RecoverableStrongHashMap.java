@@ -106,7 +106,7 @@ public class RecoverableStrongHashMap<K extends OffHeapObject, V extends OffHeap
         long length = table.length();
         index = new ConcurrentHashMap<>( (int) length );
 
-        final int threadCount = 10;
+        final int threadCount = ( length < 10 ) ? 1 : 10;
         final int idxPerThread = ((int) length) / threadCount ;
 
         LongStream.range(0, threadCount).parallel().forEach( i -> {
