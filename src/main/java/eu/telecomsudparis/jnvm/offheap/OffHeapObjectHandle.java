@@ -110,6 +110,11 @@ public abstract class OffHeapObjectHandle implements OffHeapObject {
 
     public abstract long size();
 
+    public void mark() {
+        OffHeap.gcMark( this.offset );
+    }
+    public abstract void descend();
+
     //Java.lang.Object overrides
     @Override
     public int hashCode() {

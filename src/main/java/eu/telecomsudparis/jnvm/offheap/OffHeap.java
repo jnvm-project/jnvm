@@ -110,6 +110,9 @@ public class OffHeap {
 
         public long size() { return SIZE; }
         public long classId() { return CLASS_ID; }
+        public void descend() {
+            //No-op;
+        }
 
     }
 

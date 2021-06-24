@@ -56,6 +56,14 @@ public class RecoverableStrongHashMap<K extends OffHeapObject, V extends OffHeap
 
         public long size() { return SIZE; }
         public long classId() { return CLASS_ID; }
+        public void descend() {
+            K key = getKey();
+            key.mark();
+            key.descend();
+            V value = getValue();
+            value.mark();
+            value.descend();
+        }
 
         public final K getKey() { return this.key; }
         public final V getValue() {
@@ -289,5 +297,7 @@ public class RecoverableStrongHashMap<K extends OffHeapObject, V extends OffHeap
     public void invalidate() { table.invalidate(); }
     public void destroy() { table.destroy(); }
     public void flush() { table.flush(); }
+    public void mark() { table.mark(); }
+    public void descend() { table.descend(); }
 
 }

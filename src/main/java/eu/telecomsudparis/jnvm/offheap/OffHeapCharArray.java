@@ -160,6 +160,10 @@ public class OffHeapCharArray
         };
     }
 
+    public void descend() {
+        //No-op;
+    }
+
     /* Set methods */
     /*
     @Override

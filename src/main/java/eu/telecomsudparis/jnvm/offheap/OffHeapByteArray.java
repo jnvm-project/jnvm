@@ -180,6 +180,10 @@ public class OffHeapByteArray
         return false;
     }
 
+    public void descend() {
+        //No-op;
+    }
+
     /* Set methods */
     /*
     @Override

@@ -13,6 +13,8 @@ public interface OffHeapObject {
     void invalidate();
     void flush();
     long classId();
+    void mark();
+    void descend();
 
     long addressFromFieldOffsetRO(long fieldOffset);
     long addressFromFieldOffsetRW(long fieldOffset);

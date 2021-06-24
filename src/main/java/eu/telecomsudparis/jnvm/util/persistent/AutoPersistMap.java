@@ -218,6 +218,8 @@ public class AutoPersistMap<K extends OffHeapObject,
     public void invalidate() { map.invalidate(); }
     public void destroy() { map.destroy(); }
     public void flush() { map.flush(); }
+    public void mark() { map.mark(); }
+    public void descend() { map.descend(); }
 
     // Unsafe Mechanics
     private static final sun.misc.Unsafe unsafe;

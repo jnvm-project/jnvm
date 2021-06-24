@@ -47,6 +47,14 @@ public class RecoverableHashMap<K extends OffHeapObject, V extends OffHeapObject
 
         public long size() { return SIZE; }
         public long classId() { return CLASS_ID; }
+        public void descend() {
+            K key = getKey();
+            key.mark();
+            key.descend();
+            V value = getValue();
+            value.mark();
+            value.descend();
+        }
 
         public final K getKey() { return (K) getHandleField( offsets[0] ); }
         public final V getValue() { return (V) getHandleField( offsets[1] ); }
@@ -247,5 +255,7 @@ public class RecoverableHashMap<K extends OffHeapObject, V extends OffHeapObject
     public void invalidate() { table.invalidate(); }
     public void destroy() { table.destroy(); }
     public void flush() { table.flush(); }
+    public void mark() { table.mark(); }
+    public void descend() { table.descend(); }
 
 }

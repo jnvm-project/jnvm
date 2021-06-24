@@ -34,6 +34,9 @@ public class OffHeapRedoLog implements OffHeapObject {
         @Override
         public long size() { return SIZE; }
         public long classId() { return CLASS_ID; }
+        public void descend() {
+            //No-op;
+        }
 
         public final long getOld() { return getLongField( offsets[0] ); }
         public final long getNew() { return getLongField( offsets[1] ); }
@@ -59,6 +62,9 @@ public class OffHeapRedoLog implements OffHeapObject {
 
         public long size() { return SIZE; }
         public long classId() { return CLASS_ID; }
+        public void descend() {
+            //No-op;
+        }
 
         public final MemoryBlockHandle getBlock() {
             return OffHeap.getAllocator()
@@ -83,6 +89,9 @@ public class OffHeapRedoLog implements OffHeapObject {
 
         public long size() { return SIZE; }
         public long classId() { return CLASS_ID; }
+        public void descend() {
+            //No-op;
+        }
 
 /*
         public final MemoryBlockHandle getBlock() {
@@ -153,5 +162,7 @@ public class OffHeapRedoLog implements OffHeapObject {
     public void invalidate() { table.invalidate(); }
     public void destroy() { table.destroy(); }
     public void flush() { table.flush(); }
+    public void mark() { table.mark(); }
+    public void descend() { table.descend(); }
 
 }

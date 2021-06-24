@@ -152,6 +152,13 @@ public abstract class OffHeapBigObjectHandle implements OffHeapObject {
     public abstract long indexScale();
     public abstract long baseOffset();
 
+    public void mark() {
+        for(int i=0; i<bases.length; i++) {
+            OffHeap.gcMark( bases[i] - 8 );
+        }
+    }
+    public abstract void descend();
+
     //Java.lang.Object overrides
     @Override
     public int hashCode() {
