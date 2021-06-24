@@ -129,8 +129,8 @@ public class OffHeapArray<E extends OffHeapObject>
 
     public void descend() {
         for( E entry : this ) {
-            entry.mark();
-            entry.descend();
+            if( !entry.mark() )
+                entry.descend();
         }
     }
 

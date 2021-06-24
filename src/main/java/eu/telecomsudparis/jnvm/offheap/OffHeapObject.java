@@ -13,7 +13,7 @@ public interface OffHeapObject {
     void invalidate();
     void flush();
     long classId();
-    void mark();
+    boolean mark();
     void descend();
 
     long addressFromFieldOffsetRO(long fieldOffset);

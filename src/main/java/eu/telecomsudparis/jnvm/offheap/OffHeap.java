@@ -228,7 +228,14 @@ public class OffHeap {
         log.redo();
     }
 
-    public static void gcMark(long offset) {
+    public static boolean gcMark(long offset) {
+        int idx = (int)(( offset - baseAddr() ) / MemoryBlockHandle.size() );
+        boolean marked = marks.get( idx );
+        if( !marked ) marks.set( idx );
+        return marked;
+    }
+
+    public static void gcMarkNoCheck(long offset) {
         int idx = (int)(( offset - baseAddr() ) / MemoryBlockHandle.size() );
         marks.set( idx );
     }

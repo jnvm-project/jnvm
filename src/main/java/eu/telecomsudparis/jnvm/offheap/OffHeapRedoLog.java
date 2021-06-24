@@ -162,7 +162,7 @@ public class OffHeapRedoLog implements OffHeapObject {
     public void invalidate() { table.invalidate(); }
     public void destroy() { table.destroy(); }
     public void flush() { table.flush(); }
-    public void mark() { table.mark(); }
+    public boolean mark() { return table.mark(); }
     public void descend() { table.descend(); }
 
 }

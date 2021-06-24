@@ -59,11 +59,11 @@ public class RecoverableStrongTreeMap<K extends OffHeapObject, V extends OffHeap
         public long classId() { return CLASS_ID; }
         public void descend() {
             K key = getKey();
-            key.mark();
-            key.descend();
+            if( !key.mark() )
+                key.descend();
             V value = getValue();
-            value.mark();
-            value.descend();
+            if( !value.mark() )
+                value.descend();
         }
 
         public final K getKey() { return this.key; }
@@ -303,7 +303,7 @@ public class RecoverableStrongTreeMap<K extends OffHeapObject, V extends OffHeap
     public void invalidate() { table.invalidate(); }
     public void destroy() { table.destroy(); }
     public void flush() { table.flush(); }
-    public void mark() { table.mark(); }
+    public boolean mark() { return table.mark(); }
     public void descend() { table.descend(); }
 
 }
