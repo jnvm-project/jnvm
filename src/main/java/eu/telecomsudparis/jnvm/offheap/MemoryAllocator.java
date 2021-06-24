@@ -19,7 +19,7 @@ public class MemoryAllocator implements Iterable<MemoryBlockHandle> {
     //TODO Can get rid of mappings, as long as MemoryBlocks are interchangeable
 
     //Constructor
-    private MemoryAllocator(long offset, long limit) {
+    public MemoryAllocator(long offset, long limit) {
         this.totalMemory = limit - BASE;
         this.offset = offset;
         this.reclaimed = new ConcurrentLinkedDeque<>();
@@ -27,8 +27,9 @@ public class MemoryAllocator implements Iterable<MemoryBlockHandle> {
     }
 
     //Reconstructor
-    public static MemoryAllocator recover(long offset, long limit) {
-        MemoryAllocator allocator = new MemoryAllocator(offset, limit);
+    public static void recover(MemoryAllocator allocator) {
+    //public static MemoryAllocator recover(long offset, long limit) {
+    //    MemoryAllocator allocator = new MemoryAllocator(offset, limit);
 
         //Reconstruct « reclaimed » and « mappings » datastructs
         for(MemoryBlockHandle block : allocator) {
@@ -46,7 +47,7 @@ public class MemoryAllocator implements Iterable<MemoryBlockHandle> {
             }
         }
 
-        return allocator;
+        //return allocator;
     }
 
     public void setOffset(long offset) {
