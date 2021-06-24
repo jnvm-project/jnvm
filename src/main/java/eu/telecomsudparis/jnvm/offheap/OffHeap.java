@@ -124,9 +124,14 @@ public class OffHeap {
 
         instances = new WeakHashMap<>();
         marks = new BitSet( (int)(size / MemoryBlockHandle.size()) );
+        // Bootstrap
+        //  1. open pool
+        //  2. init allocator
+        //  3. reconstruct log (apply redo)
+        //  4. reconstruct root (gc -> fix dangling)
+        //  5. reconstruct allocator free list
         pool = MemoryPool.open( path, size );
         allocator = new MemoryAllocator( pool.address(), pool.limit() );
-        MemoryAllocator.recover( allocator );
         //allocator = MemoryAllocator.recover( pool.address(), pool.limit() );
         //TODO Store OffHeap state, including offsets to our objects, in a metablock.
         if( allocator.top() == 0 ) {
@@ -147,6 +152,9 @@ public class OffHeap {
                    .filter( OffHeap::isUserClass )
                    .forEach( OffHeap::newInstance )
         */
+        log.redo();
+        gcStartMarking();
+        MemoryAllocator.recover( allocator );
     }
 
     private OffHeap() {
@@ -238,6 +246,15 @@ public class OffHeap {
     public static void gcMarkNoCheck(long offset) {
         int idx = (int)(( offset - baseAddr() ) / MemoryBlockHandle.size() );
         marks.set( idx );
+    }
+
+    public static void gcStartMarking() {
+        if( !metablock.mark() )
+            metablock.descend();
+        if( !log.mark() )
+            log.descend();
+        if( !rootInstances.mark() )
+            rootInstances.descend();
     }
 
 }
