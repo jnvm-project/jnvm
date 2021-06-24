@@ -3,6 +3,7 @@ package eu.telecomsudparis.jnvm.offheap;
 import java.util.Properties;
 import java.util.HashMap;
 import java.util.ArrayList;
+import java.util.BitSet;
 
 import eu.telecomsudparis.jnvm.config.Environment;
 import eu.telecomsudparis.jnvm.util.persistent.RecoverableHashMap;
@@ -23,6 +24,7 @@ public class OffHeap {
 
     private transient static final MemoryPool pool;
     private transient static final MemoryAllocator allocator;
+    private transient static final BitSet marks;
     public transient static final Map<Long, OffHeapObject> instances;
 
     //TODO Have a proper metablock layout declaration
@@ -118,6 +120,7 @@ public class OffHeap {
         long size = Long.parseLong( properties.getProperty(Environment.JNVM_HEAP_SIZE) );
 
         instances = new WeakHashMap<>();
+        marks = new BitSet( (int)(size / MemoryBlockHandle.size()) );
         pool = MemoryPool.open( path, size );
         allocator = MemoryAllocator.recover( pool.address(), pool.limit() );
         //allocator = new MemoryAllocator( pool.address(), pool.limit() );
@@ -220,6 +223,11 @@ public class OffHeap {
     public static void stopRecording() {
         recording = false;
         log.redo();
+    }
+
+    public static void gcMark(long offset) {
+        int idx = (int)(( offset - baseAddr() ) / MemoryBlockHandle.size() );
+        marks.set( idx );
     }
 
 }
