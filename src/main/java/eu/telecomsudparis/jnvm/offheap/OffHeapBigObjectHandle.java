@@ -12,6 +12,7 @@ public abstract class OffHeapBigObjectHandle implements OffHeapObject {
     private transient long[] bases = null;
     private transient long[] faBases = null;
     private transient boolean recordable = false;
+    //TODO Evaluate whether recordable can be deducted from validity bit
 
     //Constructor
     public OffHeapBigObjectHandle(long size) {
@@ -104,7 +105,13 @@ public abstract class OffHeapBigObjectHandle implements OffHeapObject {
     }
 
     public void attach(long[] offset) {
+        /* Debug print, delete this
+        if( offset.length != bases.length )
+            System.out.println(bases.length + " " + offset.length);
+        */
         this.offset = offset[0];
+        //Fresh allocation, can't be recordable at this stage
+        //this.recordable = block().isRecordable();
         for(int i=0; i<bases.length; i++) {
             MemoryBlockHandle block = OffHeap.getAllocator().blockFromOffset( offset[i] );
             bases[i] = block.base();
@@ -154,6 +161,7 @@ public abstract class OffHeapBigObjectHandle implements OffHeapObject {
 
     public void flush() {
         /*
+        //Flush object blocks finely
         final long blockSize = MemoryBlockHandle.size();
         long flushSize = size() + bases.length * 16;
         int i=0;
@@ -164,6 +172,7 @@ public abstract class OffHeapBigObjectHandle implements OffHeapObject {
         }
         unsafe.writebackMemory( bases[i] - 8, flushSize );
         */
+        //Flush object blocks whole
         for(int i=0; i<bases.length; i++) {
             MemoryBlockHandle block = OffHeap.getAllocator().blockFromOffset( bases[i] - 8 );
             block.flush();
@@ -175,7 +184,6 @@ public abstract class OffHeapBigObjectHandle implements OffHeapObject {
     public abstract long baseOffset();
 
     public boolean mark() {
-        //System.out.println(this);
         boolean set = OffHeap.gcMark( bases[0] - 8 );
         if( !set ) {
             if( bases.length < 10 ) {
