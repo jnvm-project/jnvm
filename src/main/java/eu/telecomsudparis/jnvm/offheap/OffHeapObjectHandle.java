@@ -97,7 +97,7 @@ public abstract class OffHeapObjectHandle implements OffHeapObject {
     public void invalidate() {
         //block().setRecordable( false );
         //this.recordable = false;
-        if( OffHeap.recording ) {
+        if( OffHeap.recording && recordable ) {
             OffHeap.getLog().logInvalidate( this );
         } else {
             this.destroy();
