@@ -81,6 +81,10 @@ public class OffHeapRedoLog implements OffHeapObject {
         final static long[] offsets = { 0 };
         final static long SIZE = 8;
 
+        /** We use a real pointer here because invalidation means calling the
+         *  proxy's free() method.
+         */
+        //TODO Evaluate the need to cache the proxy of the object to invalidate
         private OffHeapObject oho;
 
         /* TODO Delete. Unneeded
@@ -133,6 +137,7 @@ public class OffHeapRedoLog implements OffHeapObject {
     public OffHeapRedoLog(long offset) {
         table = (OffHeapArray<Entry>)OffHeapArray.rec( offset );
         //OffHeap.instances.put(table.getOffset(), this);
+        //Prevent redo-ing when recovering from in-complete state
         MemoryBlockHandle headBlock = OffHeap.getAllocator().blockFromOffset( this.getOffset() );
         if( ! headBlock.isValid() ) {
             this.clear();
@@ -155,15 +160,29 @@ public class OffHeapRedoLog implements OffHeapObject {
         table.add( new InvalidateEntry( oho ) );
     }
 
+    /**
+      * Invoked either after a crash, or at the end of an FA block.
+      *   PRE _ entries written to log (validated)
+      *     1 _ fence and validate log
+      *     2 _ apply entries
+      *     3 _ fence, invalidate log
+      *  POST _ nothing, entries are cleared at the start of next FA block
+      *
+      */
     public void redo() {
         MemoryBlockHandle headBlock = OffHeap.getAllocator().blockFromOffset( this.getOffset() );
         this.fence();
+        //this.validate(); but « raw » to avoid FA instrumentation
         headBlock.commit();
         applyEntries();
         this.fence();
+        //this.invalidate(); but « raw » to avoid FA instrumentation
         headBlock.free();
     }
 
+    /**
+      * Invoked at the start of an FA block.
+      */
     public void init() {
         this.clear();
     }
