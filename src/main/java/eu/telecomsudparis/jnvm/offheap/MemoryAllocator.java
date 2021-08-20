@@ -16,7 +16,7 @@ public class MemoryAllocator implements Iterable<MemoryBlockHandle> {
 
     private transient long totalMemory;
     private transient Queue<MemoryBlockHandle> reclaimed;
-    private transient Map<Long, MemoryBlockHandle> mappings;
+    //private transient Map<Long, MemoryBlockHandle> mappings;
     //TODO Can get rid of mappings, as long as MemoryBlocks are interchangeable
 
     //Constructor
@@ -24,7 +24,7 @@ public class MemoryAllocator implements Iterable<MemoryBlockHandle> {
         this.totalMemory = limit - BASE;
         this.offset = offset;
         this.reclaimed = new ConcurrentLinkedDeque<>();
-        this.mappings = new ConcurrentHashMap<>();
+        //this.mappings = new ConcurrentHashMap<>();
     }
 
     //Reconstructor
