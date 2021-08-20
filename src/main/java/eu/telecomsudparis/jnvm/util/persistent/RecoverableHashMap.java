@@ -3,6 +3,8 @@ package eu.telecomsudparis.jnvm.util.persistent;
 import java.util.Set;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.LongStream;
 import java.util.Collection;
 import java.util.AbstractMap;
 
@@ -21,7 +23,7 @@ public class RecoverableHashMap<K extends OffHeapObject, V extends OffHeapObject
 
     private static final int DEFAULT_SIZE = 16;
 
-    private transient HashMap<K,Long> index;
+    private transient Map<K,Long> index;
     private OffHeapArray<OffHeapNode<K,V>> table;
 
     public static class OffHeapNode<K extends OffHeapObject, V extends OffHeapObject>
@@ -79,7 +81,8 @@ public class RecoverableHashMap<K extends OffHeapObject, V extends OffHeapObject
     }
 
     public RecoverableHashMap(int initialSize) {
-        index = new HashMap<>( initialSize );
+        //index = new HashMap<>( initialSize );
+        index = new ConcurrentHashMap<>( initialSize );
         table = new OffHeapArray<>( initialSize );
         //OffHeap.instances.put(table.getOffset(), this);
         OffHeap.getAllocator().blockFromOffset( table.getOffset() ).setKlass( CLASS_ID );
@@ -90,9 +93,17 @@ public class RecoverableHashMap<K extends OffHeapObject, V extends OffHeapObject
         table = (OffHeapArray<OffHeapNode<K,V>>)OffHeapArray.rec( offset );
         //OffHeap.instances.put(table.getOffset(), this);
         long length = table.length();
-        index = new HashMap<>( (int) length );
+//        index = new HashMap<>( (int) length );
+        index = new ConcurrentHashMap<>( (int) length );
+        final int threadCount = ( length < 10 ) ? 1 : 10;
+        final int idxPerThread = ((int) length) / threadCount ;
+        LongStream.range(0, threadCount).parallel().forEach( i -> {
+            for( long k=i*idxPerThread; k<(i+1)*idxPerThread; k++ ) {
+              index.put( table.get( k ).getKey(), k );
+            }
+        } );
 
-        for( long i=0; i<length; i++ ) {
+//        for( long i=0; i<length; i++ ) {
             /*
             OffHeapNode<K,V> entry = null; K entryKey = null;
                 entry = table.get( i );
@@ -111,8 +122,8 @@ public class RecoverableHashMap<K extends OffHeapObject, V extends OffHeapObject
             //K entryKey = entry.getKey();
             //V entryValue = entry.getValue();
             //index.put( entryKey, i );
-            index.put( table.get( i ).getKey(), i );
-        }
+//            index.put( table.get( i ).getKey(), i );
+//        }
         /*
         table.forEach( entry -> index.put( entry.getKey(), entry.getValue() ) );
         */
