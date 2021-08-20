@@ -1,0 +1,1 @@
+docker build --build-arg YCSB_PATH=ycsb -t gingerbreadz/ycsb:latest --no-cache .
