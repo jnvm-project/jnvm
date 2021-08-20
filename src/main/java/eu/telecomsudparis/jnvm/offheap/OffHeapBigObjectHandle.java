@@ -1,5 +1,7 @@
 package eu.telecomsudparis.jnvm.offheap;
 
+import java.util.Arrays;
+
 import eu.telecomsudparis.jnvm.offheap.OffHeap;
 
 
@@ -156,8 +158,12 @@ public abstract class OffHeapBigObjectHandle implements OffHeapObject {
         //System.out.println(this);
         boolean set = OffHeap.gcMark( bases[0] - 8 );
         if( !set ) {
+            if( bases.length < 10 ) {
             for( int i=1; i<bases.length; i++ ) {
                 OffHeap.gcMarkNoCheck( bases[i] - 8 );
+            }
+            } else {
+                Arrays.stream(bases).parallel().map( i -> i-8 ).forEach( OffHeap::gcMarkNoCheck );
             }
         }
         return set;
