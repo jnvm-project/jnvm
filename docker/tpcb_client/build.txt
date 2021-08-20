@@ -1,0 +1,1 @@
+docker build -t gingerbreadz/tpcb_client:latest --no-cache .
