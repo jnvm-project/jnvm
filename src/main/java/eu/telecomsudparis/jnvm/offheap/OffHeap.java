@@ -315,7 +315,7 @@ public class OffHeap {
     }
 
     public static void startRecording() {
-        log.clear();
+        log.init();
         recording = true;
     }
 

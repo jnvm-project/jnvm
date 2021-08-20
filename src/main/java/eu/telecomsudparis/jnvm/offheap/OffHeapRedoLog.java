@@ -81,11 +81,18 @@ public class OffHeapRedoLog implements OffHeapObject {
         final static long[] offsets = { 0 };
         final static long SIZE = 8;
 
-        private long block;
+        private OffHeapObject oho;
 
+        /* TODO Delete. Unneeded
+        InvalidateEntry(long block) {
+            super();
+            setLongField( offsets[0], block );
+        }
+        */
         InvalidateEntry(OffHeapObject oho) {
             super();
             setHandleField( offsets[0], oho );
+            this.oho = oho;
         }
         public InvalidateEntry(MemoryBlockHandle block) { super( block.getOffset() ); }
         public InvalidateEntry(Void v, long offset) { super( offset ); }
@@ -95,15 +102,21 @@ public class OffHeapRedoLog implements OffHeapObject {
         public void descend() {
             //No-op;
         }
+        private OffHeapObject getOho() {
+            if( this.oho == null ) {
+                this.oho = getHandleField( offsets[0] );
+            }
+            return this.oho;
+        }
 
-/*
+        /* TODO Delete. Unneeded
         public final MemoryBlockHandle getBlock() {
             return OffHeap.getAllocator()
                           .blockFromOffset( getLongField( offsets[0] ));
         }
         public void apply() { getBlock().init(); }
-*/
-        public void apply() { getHandleField( offsets[0] ).invalidate(); }
+        */
+        public void apply() { getOho().invalidate(); }
     }
 
     //Constructor
@@ -120,6 +133,10 @@ public class OffHeapRedoLog implements OffHeapObject {
     public OffHeapRedoLog(long offset) {
         table = (OffHeapArray<Entry>)OffHeapArray.rec( offset );
         //OffHeap.instances.put(table.getOffset(), this);
+        MemoryBlockHandle headBlock = OffHeap.getAllocator().blockFromOffset( this.getOffset() );
+        if( ! headBlock.isValid() ) {
+            this.clear();
+        }
     }
     public OffHeapRedoLog(MemoryBlockHandle block) {
         this( block.getOffset() );
@@ -139,16 +156,23 @@ public class OffHeapRedoLog implements OffHeapObject {
     }
 
     public void redo() {
-/*
-        for( long i=0; i<table.length(); i++ ) {
-            Entry e = table.get(i);
-            e.apply();
-        }
-*/
+        MemoryBlockHandle headBlock = OffHeap.getAllocator().blockFromOffset( this.getOffset() );
+        this.fence();
+        headBlock.commit();
+        applyEntries();
+        this.fence();
+        headBlock.free();
+    }
+
+    public void init() {
+        this.clear();
+    }
+
+    private void applyEntries() {
         table.forEach( Entry::apply );
     }
 
-    public void clear() {
+    private void clear() {
         table.forEach( e -> e.destroy() );
         table.clear();
     }

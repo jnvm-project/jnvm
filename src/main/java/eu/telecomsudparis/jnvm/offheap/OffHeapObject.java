@@ -12,6 +12,7 @@ public interface OffHeapObject {
     void validate();
     void invalidate();
     void flush();
+    default void fence() { unsafe.pfence(); }
     long classId();
     boolean mark();
     void descend();

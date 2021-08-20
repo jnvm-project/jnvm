@@ -159,6 +159,7 @@ public class MemoryBlockHandle {
 
     public static void copy(long dest, long src) {
         unsafe.copyMemory( src, dest, SIZE );
+        unsafe.writebackMemory( dest, SIZE );
     }
 
     //Instance methods
