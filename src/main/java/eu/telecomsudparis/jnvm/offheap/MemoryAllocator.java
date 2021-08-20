@@ -69,6 +69,7 @@ public class MemoryAllocator implements Iterable<MemoryBlockHandle> {
         System.out.println("top : " + allocator.top() );
         System.out.println("marks.length() : " + endIdx * MemoryBlockHandle.size() );
         */
+        allocator.setTop( endIdx * MemoryBlockHandle.size() );
     }
 
     public void setOffset(long offset) {
@@ -92,11 +93,17 @@ public class MemoryAllocator implements Iterable<MemoryBlockHandle> {
         return unsafe.getLong( offset + TOP );
     }
 
+    private void setTop(long newTop) {
+        unsafe.putLong( offset + TOP, newTop );
+    }
+
     //Instance Methods
     public MemoryBlockHandle allocateBlock() {
         MemoryBlockHandle block = reclaimed.poll();
         if( block == null ) {
-            long blockOffset = unsafe.getAndAddLong( null, offset + TOP, block.size() );
+            long blockOffset = unsafe.getAndAddLong( null, offset + TOP, MemoryBlockHandle.size() );
+            //TOP is recomputed on bootstrap, no need to flush
+            //unsafe.pwb( offset + TOP );
             block = new MemoryBlockHandle( offset + BASE + blockOffset );
         } else {
             block.clear();
