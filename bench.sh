@@ -4,12 +4,12 @@ SCRIPT_DIR=$(dirname "${BASH_SOURCE[0]}")
 SCRIPT_DIR=$(realpath "${SCRIPT_DIR}")
 
 #DEFAULTS
-export PMEM_MOUNT="/pmem0"
-export TMPFS_MOUNT="/dev/shm"
-export NULLFS_MOUNT="/blackhole"
+#export PMEM_MOUNT="/pmem0"
+#export TMPFS_MOUNT="/dev/shm"
+#export NULLFS_MOUNT="/blackhole"
 
-export NUMA_NODE=0
-export JHEAP_SIZE="20g"
+#export NUMA_NODE=0
+#export JHEAP_SIZE="20g"
 
 RESULT_DIR=$SCRIPT_DIR/results
 
