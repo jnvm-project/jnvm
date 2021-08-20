@@ -12,6 +12,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.stream.LongStream;
+import java.util.concurrent.atomic.AtomicReference;
 
 import eu.telecomsudparis.jnvm.offheap.MemoryBlockHandle;
 import eu.telecomsudparis.jnvm.offheap.OffHeapObjectHandle;
@@ -39,14 +40,16 @@ public class RecoverableStrongHashMap<K extends OffHeapObject, V extends OffHeap
 
         private final transient K key;
         private transient V value;
+        //private transient AtomicReference<V> value;
 
         //Constructor
-        OffHeapNode(K key, V value) {
+        OffHeapNode(K key, V val) {
             super();
             setHandleField( offsets[0], key );
-            setHandleField( offsets[1], value );
+            setHandleField( offsets[1], val );
             this.key = key;
-            this.value = value;
+            this.value = val;
+            //this.value = new AtomicReference<>( val );
         }
 
         //Reconstructor
@@ -55,6 +58,8 @@ public class RecoverableStrongHashMap<K extends OffHeapObject, V extends OffHeap
             this.key = (K) getHandleField( offsets[0] );
             this.value = null;
             //this.value = (V) getHandleField( offsets[1] );
+            //this.value = new AtomicReference();
+            //this.value = new AtomicReference( (V) getHandleField( offsets[1] ) );
         }
         public OffHeapNode(MemoryBlockHandle block) {
             this( block.getOffset() );
@@ -80,6 +85,16 @@ public class RecoverableStrongHashMap<K extends OffHeapObject, V extends OffHeap
                 this.value = (V) getHandleField( offsets[1] );
             }
             return this.value;
+            /*
+            V val;
+            if( (val = this.value.get()) == null ) {
+                val = (V) getHandleField( offsets[1] );
+                this.value.lazySet( val );
+            }
+            return val;
+            */
+            //return this.value.get();
+
         }
         public final V setValue(V newValue) {
             V oldValue = getValue();
@@ -87,6 +102,14 @@ public class RecoverableStrongHashMap<K extends OffHeapObject, V extends OffHeap
             setHandleField( offsets[1], newValue );
             this.value = newValue;
             return oldValue;
+            /*
+            V oldVal;
+            do {
+                oldVal = this.value.get();
+                setHandleField( offsets[1], newValue );
+            } while( !this.value.compareAndSet( oldVal, newValue ) );
+            return oldVal;
+            */
         }
     }
 
