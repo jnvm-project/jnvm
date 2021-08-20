@@ -62,6 +62,9 @@ public class OffHeapByteArray
     public OffHeapByteArray(MemoryBlockHandle block) {
         OffHeapBigObjectHandle.rec( this, block.getOffset() );
     }
+    public OffHeapByteArray(Void v, long offset) {
+        OffHeapBigObjectHandle.rec( this, offset );
+    }
 
     //Instance methods
     protected static long computeSize(long length) {

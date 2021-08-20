@@ -54,6 +54,9 @@ public class RecoverableStrongTreeMap<K extends OffHeapObject, V extends OffHeap
         public OffHeapNode(MemoryBlockHandle block) {
             this( block.getOffset() );
         }
+        public OffHeapNode(Void v, long offset) {
+            this( offset );
+        }
 
         public long size() { return SIZE; }
         public long classId() { return CLASS_ID; }
@@ -160,6 +163,9 @@ public class RecoverableStrongTreeMap<K extends OffHeapObject, V extends OffHeap
     }
     public RecoverableStrongTreeMap(MemoryBlockHandle block) {
         this( block.getOffset() );
+    }
+    public RecoverableStrongTreeMap(Void v, long offset) {
+        this( offset );
     }
     public static RecoverableStrongTreeMap recover(String name, int initialSize) {
         OffHeapObject oho = OffHeap.rootInstances.get( name );

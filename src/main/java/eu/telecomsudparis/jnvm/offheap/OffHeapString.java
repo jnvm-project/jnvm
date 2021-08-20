@@ -41,6 +41,9 @@ public class OffHeapString implements OffHeapObject, Comparable<OffHeapString> {
     public OffHeapString(MemoryBlockHandle block) {
         this( block.getOffset() );
     }
+    public OffHeapString(Void v, long offset) {
+        this( offset );
+    }
 
     @Override
     public int hashCode() {

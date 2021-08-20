@@ -86,6 +86,9 @@ public class OffHeapCharArray
     public OffHeapCharArray(MemoryBlockHandle block) {
         OffHeapBigObjectHandle.rec( this, block.getOffset() );
     }
+    public OffHeapCharArray(Void v, long offset) {
+        OffHeapBigObjectHandle.rec( this, offset );
+    }
 
     //Instance methods
     protected static long computeSize(long length) {

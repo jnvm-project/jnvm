@@ -53,6 +53,9 @@ public class RecoverableStrongSkipListMap<K extends OffHeapObject, V extends Off
         public OffHeapNode(MemoryBlockHandle block) {
             this( block.getOffset() );
         }
+        public OffHeapNode(Void v, long offset) {
+            this( offset );
+        }
 
         public long size() { return SIZE; }
         public long classId() { return CLASS_ID; }
@@ -155,6 +158,9 @@ public class RecoverableStrongSkipListMap<K extends OffHeapObject, V extends Off
     }
     public RecoverableStrongSkipListMap(MemoryBlockHandle block) {
         this( block.getOffset() );
+    }
+    public RecoverableStrongSkipListMap(Void v, long offset) {
+        this( offset );
     }
     public static RecoverableStrongSkipListMap recover(String name, int initialSize) {
         OffHeapObject oho = OffHeap.rootInstances.get( name );

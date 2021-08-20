@@ -60,6 +60,9 @@ public class AutoPersistMap<K extends OffHeapObject,
     public AutoPersistMap(MemoryBlockHandle block) {
         this( block.getOffset() );
     }
+    public AutoPersistMap(Void v, long offset) {
+        this( offset );
+    }
     public static AutoPersistMap recover(String name, int initialSize) {
         OffHeapObject oho = OffHeap.rootInstances.get( name );
         AutoPersistMap ret = null;

@@ -44,6 +44,9 @@ public class RecoverableHashMap<K extends OffHeapObject, V extends OffHeapObject
         public OffHeapNode(MemoryBlockHandle block) {
             this( block.getOffset() );
         }
+        public OffHeapNode(Void v, long offset) {
+            this( offset );
+        }
 
         public long size() { return SIZE; }
         public long classId() { return CLASS_ID; }
@@ -116,6 +119,9 @@ public class RecoverableHashMap<K extends OffHeapObject, V extends OffHeapObject
     }
     public RecoverableHashMap(MemoryBlockHandle block) {
         this( block.getOffset() );
+    }
+    public RecoverableHashMap(Void v, long offset) {
+        this( offset );
     }
     public static RecoverableHashMap recover(String name, int initialSize) {
         OffHeapObject oho = OffHeap.rootInstances.get( name );

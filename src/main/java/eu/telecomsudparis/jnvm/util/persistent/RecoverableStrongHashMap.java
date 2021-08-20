@@ -53,6 +53,9 @@ public class RecoverableStrongHashMap<K extends OffHeapObject, V extends OffHeap
         public OffHeapNode(MemoryBlockHandle block) {
             this( block.getOffset() );
         }
+        public OffHeapNode(Void v, long offset) {
+            this( offset );
+        }
 
         public long size() { return SIZE; }
         public long classId() { return CLASS_ID; }
@@ -156,6 +159,9 @@ public class RecoverableStrongHashMap<K extends OffHeapObject, V extends OffHeap
     }
     public RecoverableStrongHashMap(MemoryBlockHandle block) {
         this( block.getOffset() );
+    }
+    public RecoverableStrongHashMap(Void v, long offset) {
+        this( offset );
     }
     public static RecoverableStrongHashMap recover(String name, int initialSize) {
         OffHeapObject oho = OffHeap.rootInstances.get( name );

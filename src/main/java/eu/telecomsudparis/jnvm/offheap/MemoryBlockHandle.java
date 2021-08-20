@@ -112,6 +112,10 @@ public class MemoryBlockHandle {
         return getValue( getHeader(), Header.oKLASS, Header.KLASS );
     }
 
+    public static long getKlass(long offset) {
+        return getValue( unsafe.getLong( offset + HEADER ), Header.oKLASS, Header.KLASS );
+    }
+
     public long getBlockLength() {
         return getValue( getHeader(), Header.oBSIZE, Header.BSIZE );
     }

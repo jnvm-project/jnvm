@@ -36,6 +36,9 @@ public class OffHeapCachedString extends OffHeapString implements Comparable<Off
     public OffHeapCachedString(MemoryBlockHandle block) {
         this( block.getOffset() );
     }
+    public OffHeapCachedString(Void v, long offset) {
+        this( offset );
+    }
 
     @Override
     public int hashCode() {

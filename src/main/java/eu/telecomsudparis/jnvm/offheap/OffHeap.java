@@ -100,7 +100,8 @@ public class OffHeap {
 
         private static void registerKons(Class<?> klass, long klassId) {
             try {
-                KONS.put( klassId, klass.getConstructor( MemoryBlockHandle.class ) );
+                //KONS.put( klassId, klass.getConstructor( MemoryBlockHandle.class ) );
+                KONS.put( klassId, klass.getConstructor( Void.class, long.class ) );
             } catch(Exception e) {
                 e.printStackTrace(System.out);
             }
@@ -148,6 +149,7 @@ public class OffHeap {
         Metablock() { super(); }
         Metablock(long offset) { super( offset ); }
         public Metablock(MemoryBlockHandle block) { this( block.getOffset() ); }
+        public Metablock(Void v, long offset) { super( offset ); }
         Metablock setRoot(RecoverableMap root) { setHandleField( offsets[0], root ); return this; }
         Metablock setLog(OffHeapRedoLog log) { setHandleField( offsets[1], log ); return this; }
         Metablock setUserKlasses(OffHeapArray userK) { setHandleField( offsets[2], userK ); return this; }
@@ -269,12 +271,25 @@ public class OffHeap {
         return k;
     }
 
+    public static <K extends OffHeapObject> K newInstance(long offset) {
+        K k = null;
+        try {
+            long klassId = MemoryBlockHandle.getKlass( offset );
+            k = (K) Klass.kons( klassId ).newInstance( null, offset );
+            k.attach( offset );
+        } catch(Exception e) {
+            e.printStackTrace(System.out);
+        }
+        return k;
+    }
+
     //TODO find a way to store ordinary object pointer in the off-heap
     public static <K extends OffHeapObject> K instanceFromOffset(long offset) {
         K k = null;
         if( ( k = (K) instances.get( offset ) ) == null ) {
             //Lazy object pointer mapping initialization
-            k = newInstance( allocator.blockFromOffset( offset ) );
+            //k = newInstance( allocator.blockFromOffset( offset ) );
+            k = newInstance( offset );
         }
         return k;
     }
