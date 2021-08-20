@@ -12,6 +12,7 @@ import eu.telecomsudparis.jnvm.util.persistent.RecoverableStrongHashMap;
 import eu.telecomsudparis.jnvm.util.persistent.RecoverableStrongTreeMap;
 import eu.telecomsudparis.jnvm.util.persistent.RecoverableStrongSkipListMap;
 import eu.telecomsudparis.jnvm.util.persistent.AutoPersistMap;
+import eu.telecomsudparis.jnvm.util.ThreadSafeBitSet;
 
 import java.util.Map;
 import java.util.HashMap;
@@ -26,7 +27,7 @@ public class OffHeap {
 
     private transient static final MemoryPool pool;
     private transient static final MemoryAllocator allocator;
-    private transient static final BitSet marks;
+    private transient static final ThreadSafeBitSet marks;
     public transient static final Map<Long, OffHeapObject> instances;
 
     //TODO Have a proper metablock layout declaration
@@ -153,7 +154,6 @@ public class OffHeap {
         long size = Long.parseLong( properties.getProperty(Environment.JNVM_HEAP_SIZE) );
 
         instances = new WeakHashMap<>();
-        marks = new BitSet( (int)(size / MemoryBlockHandle.size()) );
         // Bootstrap
         //  1. open pool
         //  2. init allocator
@@ -178,6 +178,7 @@ public class OffHeap {
             userKlasses = metablock.getUserKlasses();
             OffHeap.Klass.loadUserKlasses( userKlasses );
         }
+        marks = new ThreadSafeBitSet( 6, (int)( size / MemoryBlockHandle.size()) );
         //Eager object pointer mapping initialization
         //TODO iterate over MemoryPool and fill instances hash table
         /*
@@ -192,7 +193,7 @@ public class OffHeap {
             rootInstances = metablock.getRoot();
             log.redo();
             gcStartMarking();
-            MemoryAllocator.recover( allocator, marks );
+            MemoryAllocator.recover( allocator, marks.toBitSet() );
         }
     }
 
