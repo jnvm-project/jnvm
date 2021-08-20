@@ -32,7 +32,7 @@ public class OffHeap {
     //TODO Have a proper metablock layout declaration
     private static final long METABLOCK = 16;
     private static final Metablock metablock;
-    public static final RecoverableMap<OffHeapString, OffHeapObject> rootInstances;
+    public static RecoverableMap<OffHeapString, OffHeapObject> rootInstances;
     private static final OffHeapArray<OffHeapString> userKlasses;
     private static final OffHeapRedoLog log;
     public static boolean recording = false;
@@ -177,7 +177,6 @@ public class OffHeap {
             log = metablock.getLog();
             userKlasses = metablock.getUserKlasses();
             OffHeap.Klass.loadUserKlasses( userKlasses );
-            rootInstances = metablock.getRoot();
         }
         //Eager object pointer mapping initialization
         //TODO iterate over MemoryPool and fill instances hash table
@@ -186,9 +185,15 @@ public class OffHeap {
                    .filter( OffHeap::isUserClass )
                    .forEach( OffHeap::newInstance )
         */
-        log.redo();
-        gcStartMarking();
-        MemoryAllocator.recover( allocator );
+    }
+
+    public static void finishInit() {
+        if( rootInstances == null ) {
+            rootInstances = metablock.getRoot();
+            log.redo();
+            gcStartMarking();
+            MemoryAllocator.recover( allocator, marks );
+        }
     }
 
     private OffHeap() {
