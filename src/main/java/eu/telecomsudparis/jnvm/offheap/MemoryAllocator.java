@@ -84,10 +84,13 @@ public class MemoryAllocator implements Iterable<MemoryBlockHandle> {
     private static final long SIZE = 0;
     private static final long TOP = SIZE + Long.BYTES;
     private static final long BASE = TOP + Long.BYTES;
+    //TODO Find a use for SIZE field, or drop it.
 
+/*
     public long size() {
         return unsafe.getLong( offset + SIZE );
     }
+*/
 
     public long top() {
         return unsafe.getLong( offset + TOP );
@@ -111,7 +114,7 @@ public class MemoryAllocator implements Iterable<MemoryBlockHandle> {
         block.init();
         block.commit();
 
-        unsafe.getAndAddLong( null, offset + SIZE, block.size() );
+        //unsafe.getAndAddLong( null, offset + SIZE, block.size() );
 
         //mappings.put( block.getOffset(), block );
 
@@ -121,7 +124,7 @@ public class MemoryAllocator implements Iterable<MemoryBlockHandle> {
     public void freeBlock(MemoryBlockHandle block) {
         block.free();
 
-        unsafe.getAndAddLong( null, offset + SIZE, -block.size() );
+        //unsafe.getAndAddLong( null, offset + SIZE, -block.size() );
 
         reclaimed.add( block );
     }
@@ -169,9 +172,11 @@ public class MemoryAllocator implements Iterable<MemoryBlockHandle> {
         return totalMemory;
     }
 
+/*
     public long availableMemory() {
         return totalMemory - size();
     }
+*/
 
     public long usedMemory() {
         return top();
