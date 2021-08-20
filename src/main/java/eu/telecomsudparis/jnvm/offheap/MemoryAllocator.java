@@ -122,7 +122,8 @@ public class MemoryAllocator implements Iterable<MemoryBlockHandle> {
     }
 
     public void freeBlock(MemoryBlockHandle block) {
-        block.free();
+        //block.free();
+        block.init();
 
         //unsafe.getAndAddLong( null, offset + SIZE, -block.size() );
 
