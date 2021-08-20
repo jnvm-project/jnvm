@@ -2,6 +2,7 @@ package eu.telecomsudparis.jnvm.offheap;
 
 import java.util.Map;
 import java.util.Queue;
+import java.util.BitSet;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Iterator;
@@ -48,6 +49,27 @@ public class MemoryAllocator implements Iterable<MemoryBlockHandle> {
         }
 
         //return allocator;
+    }
+    public static void recover(MemoryAllocator allocator, BitSet marks) {
+        //long endIdx = allocator.top() / MemoryBlockHandle.size();
+        long endIdx = marks.length();
+        long idx = marks.nextClearBit( 0 );
+        while( idx < endIdx ) {
+            long blockAddr = allocator.offset + BASE + idx * MemoryBlockHandle.size();
+            MemoryBlockHandle block = new MemoryBlockHandle( blockAddr );
+            //System.out.println(idx + " : " + OffHeap.Klass.klazz( block.getKlass() ) + " : " + block);
+            if( block.isValid() ) {
+                allocator.freeBlock( block );
+            } else {
+                allocator.reclaimed.add( block );
+            }
+            idx = marks.nextClearBit( (int)( idx + 1 ) );
+        }
+        /*
+        System.out.println("reclaimed : " + allocator.reclaimed.size());
+        System.out.println("top : " + allocator.top() );
+        System.out.println("marks.length() : " + endIdx * MemoryBlockHandle.size() );
+        */
     }
 
     public void setOffset(long offset) {
