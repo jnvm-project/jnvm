@@ -286,7 +286,9 @@ public class OffHeap {
     }
 
     public static <K extends OffHeapBigObjectHandle> void deleteInstance(K k) {
-        allocator.freeMemory( k.getOffset(), k.size() );
+        //allocator.freeMemory( k.getOffset(), k.size() );
+        long[] bases = k.getBases();
+        allocator.freeMemory( bases );
         k.detach();
         //instances.remove( k.getOffset() );
     }

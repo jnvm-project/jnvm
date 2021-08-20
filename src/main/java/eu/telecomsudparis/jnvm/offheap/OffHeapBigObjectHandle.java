@@ -28,7 +28,16 @@ public abstract class OffHeapBigObjectHandle implements OffHeapObject {
 
     //Destructor
     public void destroy() {
-        OffHeap.deleteInstance( this, size() + bases.length * 8 );
+        //Not very clean, but more reliable to pass the « bases » directly
+        //down to the allocator for proper deletion.
+        OffHeap.deleteInstance( this );
+        //Deletion with computed size should be OK, but double check
+        //this beforehand.
+        /*
+        long nblocks = size() / BYTES_PER_BASE + 1;
+        OffHeap.deleteInstance( this, size() + nblocks * 8 );
+        //OffHeap.deleteInstance( this, size() + bases.length * 8 );
+        */
     }
 
     //Field accessors

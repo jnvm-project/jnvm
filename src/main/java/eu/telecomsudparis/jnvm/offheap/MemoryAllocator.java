@@ -133,6 +133,14 @@ public class MemoryAllocator implements Iterable<MemoryBlockHandle> {
         return blockOffsets;
     }
 
+    public void freeMemory(long[] blockBases) {
+        for(int i=0; i<blockBases.length; i++) {
+            long off = blockBases[ i ] - 8;
+            MemoryBlockHandle block = new MemoryBlockHandle( off );
+            freeBlock( block );
+        }
+    }
+
     public long[] allocateMemory(long size) {
         long nblocks = size / (MemoryBlockHandle.size() - 8) + 1;
         long[] blockOffsets = new long[ (int) nblocks ];
