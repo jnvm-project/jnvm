@@ -64,11 +64,13 @@ public class OffHeap {
 
         private static final Map<Class<?>, Long> BY_NAME = new ConcurrentHashMap<>();
         private static final Map<Long, Class<?>> BY_ID = new ConcurrentHashMap<>();
+        private static final Map<Long, Constructor> KONS = new ConcurrentHashMap<>();
 
         static {
             for( OffHeap.Klass ohc : values()){
                 BY_NAME.put( ohc.klazz, ohc.classId );
                 BY_ID.put( ohc.classId, ohc.klazz );
+                registerKons( ohc.klazz, ohc.classId );
             }
         }
 
@@ -84,6 +86,10 @@ public class OffHeap {
             return BY_ID.get( classId );
         }
 
+        public static Constructor kons(long classId) {
+            return KONS.get( classId );
+        }
+
         public static long register(Class<?> klass) {
             return BY_NAME.get( klass );
         }
@@ -92,9 +98,18 @@ public class OffHeap {
             return userKlassId + Klass.values().length;
         }
 
+        private static void registerKons(Class<?> klass, long klassId) {
+            try {
+                KONS.put( klassId, klass.getConstructor( MemoryBlockHandle.class ) );
+            } catch(Exception e) {
+                e.printStackTrace(System.out);
+            }
+        }
+
         private static void registerUserKlass(Class<?> klass, long klassId) {
             BY_NAME.put( klass, klassId );
             BY_ID.put( klassId, klass );
+            registerKons( klass, klassId );
         }
 
         public static long registerUserKlass(Class<?> klass) {
@@ -132,6 +147,7 @@ public class OffHeap {
 
         Metablock() { super(); }
         Metablock(long offset) { super( offset ); }
+        public Metablock(MemoryBlockHandle block) { this( block.getOffset() ); }
         Metablock setRoot(RecoverableMap root) { setHandleField( offsets[0], root ); return this; }
         Metablock setLog(OffHeapRedoLog log) { setHandleField( offsets[1], log ); return this; }
         Metablock setUserKlasses(OffHeapArray userK) { setHandleField( offsets[2], userK ); return this; }
@@ -238,9 +254,13 @@ public class OffHeap {
     public static <K extends OffHeapObject> K newInstance(MemoryBlockHandle block) {
         K k = null;
         try {
+            //Caching reflexive call saves time vs hmap lookup.
+            /*
             Class klass = Klass.klazz( block.getKlass() );
             Constructor kons = klass.getConstructor( MemoryBlockHandle.class );
             k = (K) kons.newInstance( block );
+            */
+            k = (K) Klass.kons( block.getKlass() ).newInstance( block );
             k.attach( block.getOffset() );
             //instances.put( k.getOffset(), k );
         } catch(Exception e) {
