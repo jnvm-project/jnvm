@@ -291,6 +291,8 @@ public class OffHeap {
             metablock.descend();
         if( !log.mark() )
             log.descend();
+        if( !userKlasses.mark() )
+            userKlasses.descend();
         if( !rootInstances.mark() )
             rootInstances.descend();
         long end = System.nanoTime();
