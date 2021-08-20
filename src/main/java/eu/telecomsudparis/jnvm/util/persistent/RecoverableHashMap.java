@@ -256,6 +256,20 @@ public class RecoverableHashMap<K extends OffHeapObject, V extends OffHeapObject
     public void destroy() { table.destroy(); }
     public void flush() { table.flush(); }
     public boolean mark() { return table.mark(); }
-    public void descend() { table.descend(); }
+    public void descend() {
+        if( index.size() <= 20 ) {
+            table.forEach( node -> {
+                if( !node.mark() ) {
+                    node.descend();
+                }
+            });
+        } else {
+            //index.values().stream().filter( node -> !node.mark() ).forEach( node -> node.descend() );
+            index.values().parallelStream()
+                          .map( k -> table.get( k ) )
+                          .filter( node -> !node.mark() )
+                          .forEach( node -> node.descend() );
+        }
+    }
 
 }
