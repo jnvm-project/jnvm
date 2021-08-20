@@ -189,11 +189,21 @@ public class OffHeap {
     }
 
     public static void finishInit() {
+        //long start, end;
         if( rootInstances == null ) {
+            //start = System.nanoTime();
             rootInstances = metablock.getRoot();
+            //end = System.nanoTime();
+            //System.out.println("Recovery finished in (nsec): " + (end - start) );
             log.redo();
+            //start = System.nanoTime();
             gcStartMarking();
+            //end = System.nanoTime();
+            //System.out.println("Marking finished in (nsec): " + (end - start) );
+            //start = System.nanoTime();
             MemoryAllocator.recover( allocator, marks.toBitSet() );
+            //end = System.nanoTime();
+            //System.out.println("Allocator finished in (nsec): " + (end - start) );
         }
     }
 
@@ -287,12 +297,9 @@ public class OffHeap {
     public static void gcMarkNoCheck(long offset) {
         int idx = (int)(( offset - baseAddr() ) / MemoryBlockHandle.size() );
         marks.set( idx );
-        //System.out.println(marks.cardinality());
     }
 
     public static void gcStartMarking() {
-        System.out.println("Starting marking");
-        long start = System.nanoTime();
         if( !metablock.mark() )
             metablock.descend();
         if( !log.mark() )
@@ -301,8 +308,6 @@ public class OffHeap {
             userKlasses.descend();
         if( !rootInstances.mark() )
             rootInstances.descend();
-        long end = System.nanoTime();
-        System.out.println("Marking finished in (nsec): " + (end - start) );
     }
 
 }
