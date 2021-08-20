@@ -300,6 +300,19 @@ public class RecoverableStrongHashMap<K extends OffHeapObject, V extends OffHeap
     public void destroy() { table.destroy(); }
     public void flush() { table.flush(); }
     public boolean mark() { return table.mark(); }
-    public void descend() { table.descend(); }
+    public void descend() {
+        //Do not descend through the table, iterating over the index is way faster
+        //table.descend();
+        if( index.size() <= 20 ) {
+            for( OffHeapNode<K,V> node : index.values() ) {
+                if( !node.mark() ) {
+                    node.descend();
+                }
+            }
+        } else {
+            //index.values().stream().filter( node -> !node.mark() ).forEach( node -> node.descend() );
+            index.values().parallelStream().filter( node -> !node.mark() ).forEach( node -> node.descend() );
+        }
+    }
 
 }
