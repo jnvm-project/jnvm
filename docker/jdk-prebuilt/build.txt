@@ -1,0 +1,1 @@
+docker build -f /home/anatole/jnvm/docker/jdk-prebuilt/Dockerfile --build-arg PREBUILT_PATH=jdk -t gingerbreadz/jnvm-jdk:prebuilt .

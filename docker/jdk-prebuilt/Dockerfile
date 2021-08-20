@@ -1,0 +1,7 @@
+FROM openjdk:8-slim
+  
+ARG PREBUILT_PATH
+
+RUN rm -rf $JAVA_HOME/*
+
+COPY $PREBUILT_PATH $JAVA_HOME
