@@ -28,9 +28,8 @@ public class MemoryAllocator implements Iterable<MemoryBlockHandle> {
     }
 
     //Reconstructor
-    public static void recover(MemoryAllocator allocator) {
-    //public static MemoryAllocator recover(long offset, long limit) {
-    //    MemoryAllocator allocator = new MemoryAllocator(offset, limit);
+    private static MemoryAllocator recover(long offset, long limit) {
+        MemoryAllocator allocator = new MemoryAllocator(offset, limit);
 
         //Reconstruct « reclaimed » and « mappings » datastructs
         for(MemoryBlockHandle block : allocator) {
@@ -38,17 +37,17 @@ public class MemoryAllocator implements Iterable<MemoryBlockHandle> {
                 //Invalidate when new version is ready but old was not dismissed
                 block.free();
             }
-
             if( !block.isValid() ) {
                 allocator.reclaimed.add( block );
             } else if( !block.isMultiBlock() ) {
-                //OffHeap.newInstance( block );
+                //Ressurect instance for fixup
+                OffHeap.newInstance( block );
             } else {
                 //allocator.mappings.put( block.getOffset(), block );
             }
         }
 
-        //return allocator;
+        return allocator;
     }
     public static void recover(MemoryAllocator allocator, BitSet marks) {
         //long endIdx = allocator.top() / MemoryBlockHandle.size();
