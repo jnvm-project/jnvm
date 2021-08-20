@@ -153,6 +153,7 @@ public abstract class OffHeapBigObjectHandle implements OffHeapObject {
     }
 
     public void flush() {
+        /*
         final long blockSize = MemoryBlockHandle.size();
         long flushSize = size() + bases.length * 16;
         int i=0;
@@ -162,6 +163,11 @@ public abstract class OffHeapBigObjectHandle implements OffHeapObject {
             flushSize -= blockSize;
         }
         unsafe.writebackMemory( bases[i] - 8, flushSize );
+        */
+        for(int i=0; i<bases.length; i++) {
+            MemoryBlockHandle block = OffHeap.getAllocator().blockFromOffset( bases[i] - 8 );
+            block.flush();
+        }
     }
 
     public abstract long size();
@@ -178,6 +184,19 @@ public abstract class OffHeapBigObjectHandle implements OffHeapObject {
             }
             } else {
                 Arrays.stream(bases).parallel().map( i -> i-8 ).forEach( OffHeap::gcMarkNoCheck );
+            }
+        }
+        return set;
+    }
+    //Unused
+    public static boolean mark(long offset) {
+        boolean set = OffHeap.gcMark( offset );
+        if( !set ) {
+            long off = unsafe.getLong( offset + 8 );
+            while( off != -1 ) {
+                off += OffHeap.baseAddr();
+                OffHeap.gcMarkNoCheck( off );
+                off = unsafe.getLong( off + 8 );
             }
         }
         return set;
