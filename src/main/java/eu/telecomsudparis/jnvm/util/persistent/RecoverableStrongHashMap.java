@@ -53,8 +53,8 @@ public class RecoverableStrongHashMap<K extends OffHeapObject, V extends OffHeap
         OffHeapNode(long offset) {
             super( offset );
             this.key = (K) getHandleField( offsets[0] );
-            //this.value = null;
-            this.value = (V) getHandleField( offsets[1] );
+            this.value = null;
+            //this.value = (V) getHandleField( offsets[1] );
         }
         public OffHeapNode(MemoryBlockHandle block) {
             this( block.getOffset() );
@@ -76,15 +76,14 @@ public class RecoverableStrongHashMap<K extends OffHeapObject, V extends OffHeap
 
         public final K getKey() { return this.key; }
         public final V getValue() {
-/*
             if( this.value == null ) {
                 this.value = (V) getHandleField( offsets[1] );
             }
-*/
             return this.value;
         }
         public final V setValue(V newValue) {
-            V oldValue = this.value;
+            V oldValue = getValue();
+            //V oldValue = this.value;
             setHandleField( offsets[1], newValue );
             this.value = newValue;
             return oldValue;
