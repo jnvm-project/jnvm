@@ -42,25 +42,25 @@ public class OffHeap {
     //TODO Generate this from all classes extending OffHeapObject
     //     and the one existing on the memory pool metablock
     public enum Klass {
-        A(0, Metablock.class),
-        B(1, OffHeapArray.class),
-        C(2, OffHeapCharArray.class),
-        D(3, OffHeapByteArray.class),
-        E(4, OffHeapString.class),
-        F(5, OffHeapCachedString.class),
-        G(6, RecoverableHashMap.class),
-        H(7, RecoverableHashMap.OffHeapNode.class),
-        I(8, RecoverableStrongHashMap.class),
-        J(9, RecoverableStrongHashMap.OffHeapNode.class),
-        K(10, RecoverableStrongTreeMap.class),
-        L(11, RecoverableStrongTreeMap.OffHeapNode.class),
-        M(12, RecoverableStrongSkipListMap.class),
-        N(13, RecoverableStrongSkipListMap.OffHeapNode.class),
-        O(14, AutoPersistMap.class),
-        P(15, OffHeapRedoLog.class),
-        Q(16, OffHeapRedoLog.CopyEntry.class),
-        R(17, OffHeapRedoLog.ValidateEntry.class),
-        S(18, OffHeapRedoLog.InvalidateEntry.class);
+        A(1, Metablock.class),
+        B(2, OffHeapArray.class),
+        C(3, OffHeapCharArray.class),
+        D(4, OffHeapByteArray.class),
+        E(5, OffHeapString.class),
+        F(6, OffHeapCachedString.class),
+        G(7, RecoverableHashMap.class),
+        H(8, RecoverableHashMap.OffHeapNode.class),
+        I(9, RecoverableStrongHashMap.class),
+        J(10, RecoverableStrongHashMap.OffHeapNode.class),
+        K(11, RecoverableStrongTreeMap.class),
+        L(12, RecoverableStrongTreeMap.OffHeapNode.class),
+        M(13, RecoverableStrongSkipListMap.class),
+        N(14, RecoverableStrongSkipListMap.OffHeapNode.class),
+        O(15, AutoPersistMap.class),
+        P(16, OffHeapRedoLog.class),
+        Q(17, OffHeapRedoLog.CopyEntry.class),
+        R(18, OffHeapRedoLog.ValidateEntry.class),
+        S(19, OffHeapRedoLog.InvalidateEntry.class);
 
         private static final Map<Class<?>, Long> BY_NAME = new ConcurrentHashMap<>();
         private static final Map<Long, Class<?>> BY_ID = new ConcurrentHashMap<>();
