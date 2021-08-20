@@ -92,8 +92,9 @@ public class RecoverableHashMap<K extends OffHeapObject, V extends OffHeapObject
     public RecoverableHashMap(long offset) {
         table = (OffHeapArray<OffHeapNode<K,V>>)OffHeapArray.rec( offset );
         //OffHeap.instances.put(table.getOffset(), this);
-        long length = table.length();
-//        index = new HashMap<>( (int) length );
+        //long length = table.length();
+        //index = new HashMap<>( (int) length );
+        /*
         index = new ConcurrentHashMap<>( (int) length );
         final int threadCount = ( length < 10 ) ? 1 : 10;
         final int idxPerThread = ((int) length) / threadCount ;
@@ -102,6 +103,7 @@ public class RecoverableHashMap<K extends OffHeapObject, V extends OffHeapObject
               index.put( table.get( k ).getKey(), k );
             }
         } );
+        */
 
 //        for( long i=0; i<length; i++ ) {
             /*
@@ -128,6 +130,19 @@ public class RecoverableHashMap<K extends OffHeapObject, V extends OffHeapObject
         table.forEach( entry -> index.put( entry.getKey(), entry.getValue() ) );
         */
     }
+    private void checkIndexNonNull() {
+        if( index == null ) {
+            long length = table.length();
+            index = new ConcurrentHashMap<>( (int) length );
+            final int threadCount = ( length < 10 ) ? 1 : 10;
+            final int idxPerThread = ((int) length) / threadCount ;
+            LongStream.range(0, threadCount).parallel().forEach( i -> {
+                for( long k=i*idxPerThread; k<(i+1)*idxPerThread; k++ ) {
+                  index.put( table.get( k ).getKey(), k );
+                }
+            } );
+        }
+    }
     public RecoverableHashMap(MemoryBlockHandle block) {
         this( block.getOffset() );
     }
@@ -153,22 +168,27 @@ public class RecoverableHashMap<K extends OffHeapObject, V extends OffHeapObject
     /* Map methods */
 
     public int size() {
+        checkIndexNonNull();
         return index.size();
     }
 
     public boolean isEmpty() {
+        checkIndexNonNull();
         return index.isEmpty();
     }
 
     public boolean containsKey(Object key) {
+        checkIndexNonNull();
         return index.containsKey( key );
     }
 
     public boolean containsValue(Object value) {
+        checkIndexNonNull();
         return table.contains( value );
     }
 
     public Set<K> keySet() {
+        checkIndexNonNull();
         return index.keySet();
     }
 
@@ -178,6 +198,7 @@ public class RecoverableHashMap<K extends OffHeapObject, V extends OffHeapObject
     }
 
     public V put(K key, V value) {
+        checkIndexNonNull();
         Long idx; V oldValue = null;
         if( (idx = index.get( key )) == null ) {
             idx = table.add( new OffHeapNode<>( key, value ) );
@@ -189,6 +210,7 @@ public class RecoverableHashMap<K extends OffHeapObject, V extends OffHeapObject
     }
 
     public V replaceValue(Object key, V value) {
+        checkIndexNonNull();
         Long idx; V oldValue = null;
         if( ( idx = index.get( key ) ) != null ) {
             oldValue = table.get( idx ).setValue( value );
@@ -197,6 +219,7 @@ public class RecoverableHashMap<K extends OffHeapObject, V extends OffHeapObject
     }
 
     public V get(Object key) {
+        checkIndexNonNull();
         Long idx;
         if( ( idx = index.get( key ) ) != null ) {
             return table.get( idx ).getValue();
@@ -205,6 +228,7 @@ public class RecoverableHashMap<K extends OffHeapObject, V extends OffHeapObject
     }
 
     public V remove(Object key) {
+        checkIndexNonNull();
         Long idx; V oldValue = null;
         if( (idx = index.get( key )) != null ) {
             oldValue = table.remove( idx ).getValue();
@@ -221,6 +245,7 @@ public class RecoverableHashMap<K extends OffHeapObject, V extends OffHeapObject
     }
 
     public void clear() {
+        checkIndexNonNull();
         table.clear();
         index.clear();
     }
@@ -274,7 +299,23 @@ public class RecoverableHashMap<K extends OffHeapObject, V extends OffHeapObject
     public void flush() { table.flush(); }
     public boolean mark() { return table.mark(); }
     public void descend() {
-        if( index.size() <= 20 ) {
+        //Do not descend through the table, iterating over the index is way faster
+        //table.descend();
+        if( index == null ) {
+            long length = table.length();
+            //index = new ConcurrentHashMap<>( (int) length );
+            final int threadCount = ( length < 10 ) ? 1 : 10;
+            final int idxPerThread = ((int) length) / threadCount ;
+            LongStream.range(0, threadCount).parallel().forEach( i -> {
+                for( long k=i*idxPerThread; k<(i+1)*idxPerThread; k++ ) {
+                  OffHeapNode<K,V> node = table.get( k );
+                  if( !node.mark() ) {
+                    node.descend();
+                  }
+                  //index.put( node.getKey(), k );
+                }
+            } );
+        } else if( index.size() <= 20 ) {
             table.forEach( node -> {
                 if( !node.mark() ) {
                     node.descend();
