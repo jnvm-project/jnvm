@@ -14,6 +14,7 @@ VOLUME ["/ycsb/exp/out"]
 RUN set -eux;\
         apt-get update;\
         apt-get install -y --no-install-recommends numactl gawk gnuplot-nox git;\
+        apt-get install -y --no-install-recommends libpmem1 libpmemblk1 libpmemlog1 libpmemobj1 libpmempool1;\
         rm -rf /var/lib/apt/lists/*
         #apt-get install -y --no-install-recommends numactl maven gawk gnuplot git;\
 #RUN git clone https://github.com/jnvm-project/jnvm.git &&\

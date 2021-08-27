@@ -137,7 +137,7 @@ We packaged the different benchmark applications using docker containers.
 For simplicity, we published pre-built docker images on dockerhub that may be directly used.
 Fetch them all at once :
 ```
-    $ ./bench.sh pull all
+    $ ./bench.sh pull-all
 ```
 
 We have plans to add in the near future complete detailed steps to manually build the sources

@@ -21,8 +21,9 @@ check_env() {
 
 case $1 in
   check-env) check_env && exit 0;;
-  "pull all")
+  pull-all)
     docker pull gingerbreadz/ycsb:latest
+    docker pull gingerbreadz/transactions:latest
     docker pull gingerbreadz/tpcb_client:latest
     docker pull yohanpipereau/go-pmem:latest
     exit 0
