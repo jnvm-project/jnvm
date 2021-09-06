@@ -10,7 +10,7 @@ The framework also provides a library of persistent data types that resist
 reboots and power failures.
 
 The [experiments page](EXPERIMENTS.md) lists evaluations of J-NVM,
-where it is compared to other available interfaces with NVMM in Java on YCSB
+where it is compared to other available interfaces with NVMM in Java using YCSB
 and a TPC-B-like application benchmark.
 
 ## Build
@@ -18,7 +18,7 @@ and a TPC-B-like application benchmark.
 ### Prerequisites
 
 The framework currently requires a patched Java Development Kit (JDK) version 8.
-The [patches](patches) applies onto `jdk8u232-b03` changeset `c5ca527b0afd`.
+The [patches](patches) apply onto `jdk8u232-b03` changeset `c5ca527b0afd`.
 
 ### Steps
 
