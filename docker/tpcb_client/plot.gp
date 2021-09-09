@@ -1,5 +1,5 @@
 set terminal png
-set output '/results/tpcb.png'
+set output outdir.'/tpcb.png'
 
 load "/tpcb/styles.inc"
 
@@ -19,6 +19,6 @@ set ylabel "Throughput (Kops/s)"
 set xlabel "Time (s)"
 
 plot \
-"< /tpcb/parse.sh /results/mem.log" title "\\Volatile" smooth csplines with linespoints ls 7 ps 0.5, \
-"< /tpcb/parse.sh /results/jnvm.log" title "\\SYSFA" smooth csplines with linespoints ls 1 ps 0.5, \
-"< /tpcb/parse.sh /results/sfs.log" title "\\FS" smooth csplines with linespoints ls 2 ps 0.5
+"< /tpcb/parse.sh ${EXP_OUTDIR}/mem.log" title "\\Volatile" smooth csplines with linespoints ls 7 ps 0.5, \
+"< /tpcb/parse.sh ${EXP_OUTDIR}/jnvm.log" title "\\SYSFA" smooth csplines with linespoints ls 1 ps 0.5, \
+"< /tpcb/parse.sh ${EXP_OUTDIR}/sfs.log" title "\\FS" smooth csplines with linespoints ls 2 ps 0.5

@@ -6,4 +6,4 @@ rm -f /${EXP_OUTDIR}/*
 
 /tpcb/src/test/bin/fault.sh
 
-gnuplot /tpcb/plot.gp
+gnuplot -e "outdir='${EXP_OUTDIR}'" /tpcb/plot.gp

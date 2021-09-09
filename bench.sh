@@ -84,6 +84,7 @@ case $1 in
                  -v /var/run/docker.sock:/var/run/docker.sock --net host \
                  -e PMEM_MOUNT=${PMEM_MOUNT} \
                  -e NUMA_NODE=${NUMA_NODE} \
+                 -e EXP_OUTDIR=${RESULT_DIR_IN} \
                  -e JHEAP_SIZE=${JHEAP_SIZE}"
     DOCKER_IMAGE="gingerbreadz/tpcb_client:latest"
     ;;
