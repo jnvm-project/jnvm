@@ -25,6 +25,7 @@ check_env() {
 
 [ $# -lt 1 ] && usage && exit 1
 
+while [ $# -gt 0 ] ; do
 case $1 in
   check-env) check_env && exit 0;;
   pull-all)
@@ -104,6 +105,8 @@ case $1 in
     echo "Unrecognized input arg" && usage && exit 1
     ;;
 esac
+shift 1
+done
 
 mkdir -p $RESULT_DIR
 
