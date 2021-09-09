@@ -1,5 +1,5 @@
 set terminal png
-set output '/results/ycsb_keycount.png'
+set output outdir.'/exp2.keycount.ref/ycsb_keycount.png'
 
 load "/ycsb/plot/styles.inc"
 
@@ -31,7 +31,7 @@ unset ytics
 unset ylabel
 
 plot \
-"< cat /results/data/exp2.keycount.dat | grep read | grep workloada | grep \"run,\" | grep -v \",5000000,\" | grep nvm | awk -F \",\" '{print $2\" \"($10/1000)}' | sort -n | awk '{printf \"%1.2g %2.2f\\n\" , $1 , $2}' | sed s/1e\+0/10^/g | awk '{print \"\$\"$1\"\$ \"$2}'" using ($2):xtic(1) title "\\aread (\\SYSPDT)" ls 1, \
-"< cat /results/data/exp2.keycount.dat | grep \"run,\" | grep read | grep workloada | grep -v \",5000000,\" | grep \"infinispan,\" | awk -F \",\" '{print $2\" \"($10/1000)}' | sort -n | awk '{printf \"%1.2g %2.2f\\n\" , $1 , $2}' | sed s/1e\+0/10^/g | awk '{print \"\$\"$1\"\$ \"$2}'" using ($2):xtic(1) title "\\aread (\\FS)" ls 2, \
-"< cat /results/data/exp2.keycount.dat | grep update | grep workloada | grep \"run,\" | grep -v \",5000000,\" |grep nvm | awk -F \",\" '{print $2\" \"($10/1000)}' | sort -n | awk '{printf \"%1.2g %2.2f\\n\" , $1 , $2}' | sed s/1e\+0/10^/g | awk '{print \"\$\"$1\"\$ \"$2}'" using ($2):xtic(1) title "\\update (\\SYSPDT)" ls 1 fs pattern 1, \
-"< cat /results/data/exp2.keycount.dat | grep \"run,\" | grep update | grep workloada | grep -v \",5000000,\" |grep \"infinispan,\" | awk -F \",\" '{print $2\" \"($10/1000)}' | sort -n | awk '{printf \"%1.2g %2.2f\\n\" , $1 , $2}' | sed s/1e\+0/10^/g | awk '{print \"\$\"$1\"\$ \"$2}'" using ($2):xtic(1) title "\\update (\\FS)" ls 2 fs pattern 1
+"< cat ${EXP_OUTDIR}/exp2.keycount.ref/data/exp2.keycount.dat | grep read | grep workloada | grep \"run,\" | grep -v \",5000000,\" | grep nvm | awk -F \",\" '{print $2\" \"($10/1000)}' | sort -n | awk '{printf \"%1.2g %2.2f\\n\" , $1 , $2}' | sed s/1e\+0/10^/g | awk '{print \"\$\"$1\"\$ \"$2}'" using ($2):xtic(1) title "\\aread (\\SYSPDT)" ls 1, \
+"< cat ${EXP_OUTDIR}/exp2.keycount.ref/data/exp2.keycount.dat | grep \"run,\" | grep read | grep workloada | grep -v \",5000000,\" | grep \"infinispan,\" | awk -F \",\" '{print $2\" \"($10/1000)}' | sort -n | awk '{printf \"%1.2g %2.2f\\n\" , $1 , $2}' | sed s/1e\+0/10^/g | awk '{print \"\$\"$1\"\$ \"$2}'" using ($2):xtic(1) title "\\aread (\\FS)" ls 2, \
+"< cat ${EXP_OUTDIR}/exp2.keycount.ref/data/exp2.keycount.dat | grep update | grep workloada | grep \"run,\" | grep -v \",5000000,\" |grep nvm | awk -F \",\" '{print $2\" \"($10/1000)}' | sort -n | awk '{printf \"%1.2g %2.2f\\n\" , $1 , $2}' | sed s/1e\+0/10^/g | awk '{print \"\$\"$1\"\$ \"$2}'" using ($2):xtic(1) title "\\update (\\SYSPDT)" ls 1 fs pattern 1, \
+"< cat ${EXP_OUTDIR}/exp2.keycount.ref/data/exp2.keycount.dat | grep \"run,\" | grep update | grep workloada | grep -v \",5000000,\" |grep \"infinispan,\" | awk -F \",\" '{print $2\" \"($10/1000)}' | sort -n | awk '{printf \"%1.2g %2.2f\\n\" , $1 , $2}' | sed s/1e\+0/10^/g | awk '{print \"\$\"$1\"\$ \"$2}'" using ($2):xtic(1) title "\\update (\\FS)" ls 2 fs pattern 1

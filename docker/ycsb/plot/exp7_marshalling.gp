@@ -1,5 +1,5 @@
 set terminal png
-set output '/results/ycsb_marshalling.png'
+set output outdir.'/exp7.marshalling.ref/ycsb_marshalling.png'
 
 load "/ycsb/plot/styles.inc"
 
@@ -30,10 +30,10 @@ set ylabel "Completion\ntime (s)"
 
 
 plot \
-  "< cat /results/data/exp7.marshalling.dat | grep 'transaction,' | grep 'r1,' | grep none | awk -F, '{if ($1/$2 == 1) printf $4/100\" \"$20/1e9\"\\n\"}' | sort -n" using 2:xtic(1) title "\\Volatile" ls 7, \
-    "< cat /results/data/exp7.marshalling.dat | grep 'transaction,' | grep 'r1,' | grep nullfsvfs | awk -F, '{if ($1/$2 == 1) printf $4/100\" \"$20/1e9\"\\n\"}' | sort -n" using 2:xtic(1) title "\\NULLFS" ls 3 fs pattern 2, \
-  "< cat /results/data/exp7.marshalling.dat | grep 'transaction,' | grep 'r1,' | grep tmpfs | awk -F, '{if ($1/$2 == 1) printf $4/100\" \"$20/1e9\"\\n\"}' | sort -n" using 2:xtic(1) title "\\TMPFS" ls 3 fs pattern 4, \
-      "< cat /results/data/exp7.marshalling.dat | grep 'transaction,' | grep 'r1,' | grep pmem | awk -F, '{if ($1/$2 == 1) printf $4/100\" \"$20/1e9\"\\n\"}' | sort -n" using 2:xtic(1) title "\\FS" ls 3
+  "< cat ${EXP_OUTDIR}/exp7.marshalling.ref/data/exp7.marshalling.dat | grep 'transaction,' | grep 'r1,' | grep none | awk -F, '{if ($1/$2 == 1) printf $4/100\" \"$20/1e9\"\\n\"}' | sort -n" using 2:xtic(1) title "\\Volatile" ls 7, \
+    "< cat ${EXP_OUTDIR}/exp7.marshalling.ref/data/exp7.marshalling.dat | grep 'transaction,' | grep 'r1,' | grep nullfsvfs | awk -F, '{if ($1/$2 == 1) printf $4/100\" \"$20/1e9\"\\n\"}' | sort -n" using 2:xtic(1) title "\\NULLFS" ls 3 fs pattern 2, \
+  "< cat ${EXP_OUTDIR}/exp7.marshalling.ref/data/exp7.marshalling.dat | grep 'transaction,' | grep 'r1,' | grep tmpfs | awk -F, '{if ($1/$2 == 1) printf $4/100\" \"$20/1e9\"\\n\"}' | sort -n" using 2:xtic(1) title "\\TMPFS" ls 3 fs pattern 4, \
+      "< cat ${EXP_OUTDIR}/exp7.marshalling.ref/data/exp7.marshalling.dat | grep 'transaction,' | grep 'r1,' | grep pmem | awk -F, '{if ($1/$2 == 1) printf $4/100\" \"$20/1e9\"\\n\"}' | sort -n" using 2:xtic(1) title "\\FS" ls 3
 
 # 3e6 operation
 # 1e6 recordcount

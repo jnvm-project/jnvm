@@ -1,5 +1,5 @@
 set terminal png
-set output '/results/ycsb_pdt.png'
+set output outdir.'/exp8.pdt.ref/ycsb_pdt.png'
 
 load "/ycsb/plot/styles.inc"
 

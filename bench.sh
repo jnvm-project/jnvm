@@ -10,11 +10,11 @@ SCRIPT_DIR=$(realpath "${SCRIPT_DIR}")
 
 #export NUMA_NODE=0
 #export JHEAP_SIZE="20g"
+export RESULT_DIR=$SCRIPT_DIR/results
 
-RESULT_DIR=$SCRIPT_DIR/results
 
 check_env() {
-  for env_var in PMEM_MOUNT TMPFS_MOUNT NULLFS_MOUNT NUMA_NODE JHEAP_SIZE ; do
+  for env_var in PMEM_MOUNT TMPFS_MOUNT NULLFS_MOUNT NUMA_NODE JHEAP_SIZE RESULT_DIR; do
     echo "$env_var: ${!env_var}"
   done
 }
@@ -34,58 +34,49 @@ case $1 in
                  --mount type=bind,source=${TMPFS_MOUNT},destination=/dev/shm \
                  --mount type=bind,source=${NULLFS_MOUNT},destination=/blackhole \
                  -e NUMA_NODE=${NUMA_NODE} \
+                 -e EXP_OUTDIR=${RESULT_DIR_IN} \
                  -e JHEAP_SIZE=${JHEAP_SIZE}"
     DOCKER_IMAGE="gingerbreadz/ycsb:latest"
     ;;&
   ycsb_all)
-    EXP_OUTDIR="/ycsb/exp/out"
     EXP_NAME=""
-    DOCKER_ARGS="$DOCKER_ARGS -e EXP_OUTDIR=$EXP_OUTDIR -e EXP_NAME=$EXP_NAME"
+    DOCKER_ARGS="$DOCKER_ARGS -e EXP_NAME=$EXP_NAME"
     ;;
   ycsb_throughput)
-    EXP_OUTDIR="/ycsb/exp/out/exp0.exectime.ref"
     EXP_NAME="exp0_exectime"
-    DOCKER_ARGS="$DOCKER_ARGS -e EXP_OUTDIR=$EXP_OUTDIR -e EXP_NAME=$EXP_NAME"
+    DOCKER_ARGS="$DOCKER_ARGS -e EXP_NAME=$EXP_NAME"
     ;;
   ycsb_marshalling)
-    EXP_OUTDIR="/ycsb/exp/out/exp7.marshalling.ref"
     EXP_NAME="exp7_marshalling"
-    DOCKER_ARGS="$DOCKER_ARGS -e EXP_OUTDIR=$EXP_OUTDIR -e EXP_NAME=$EXP_NAME"
+    DOCKER_ARGS="$DOCKER_ARGS -e EXP_NAME=$EXP_NAME"
     ;;
   ycsb_cacheratio)
-    EXP_OUTDIR="/ycsb/exp/out/exp1.cachesize.ref"
     EXP_NAME="exp1_cachesize"
-    DOCKER_ARGS="$DOCKER_ARGS -e EXP_OUTDIR=$EXP_OUTDIR -e EXP_NAME=$EXP_NAME"
+    DOCKER_ARGS="$DOCKER_ARGS -e EXP_NAME=$EXP_NAME"
     ;;
   ycsb_recordcount)
-    EXP_OUTDIR="/ycsb/exp/out/exp2.keycount.ref"
     EXP_NAME="exp2_keycount"
-    DOCKER_ARGS="$DOCKER_ARGS -e EXP_OUTDIR=$EXP_OUTDIR -e EXP_NAME=$EXP_NAME"
+    DOCKER_ARGS="$DOCKER_ARGS -e EXP_NAME=$EXP_NAME"
     ;;
   ycsb_fieldcount)
-    EXP_OUTDIR="/ycsb/exp/out/exp6.fieldcount.ref"
     EXP_NAME="exp6_fieldcount"
-    DOCKER_ARGS="$DOCKER_ARGS -e EXP_OUTDIR=$EXP_OUTDIR -e EXP_NAME=$EXP_NAME"
+    DOCKER_ARGS="$DOCKER_ARGS -e EXP_NAME=$EXP_NAME"
     ;;
   ycsb_recordsize)
-    EXP_OUTDIR="/ycsb/exp/out/exp4.objsize.ref"
     EXP_NAME="exp4_objsize"
-    DOCKER_ARGS="$DOCKER_ARGS -e EXP_OUTDIR=$EXP_OUTDIR -e EXP_NAME=$EXP_NAME"
+    DOCKER_ARGS="$DOCKER_ARGS -e EXP_NAME=$EXP_NAME"
     ;;
   ycsb_concurrent)
-    EXP_OUTDIR="/ycsb/exp/out/exp5.concurrent.ref"
     EXP_NAME="exp5_concurrent"
-    DOCKER_ARGS="$DOCKER_ARGS -e EXP_OUTDIR=$EXP_OUTDIR -e EXP_NAME=$EXP_NAME"
+    DOCKER_ARGS="$DOCKER_ARGS -e EXP_NAME=$EXP_NAME"
     ;;
   ycsb_pdt)
-    EXP_OUTDIR="/ycsb/exp/out/exp8.pdt.ref"
     EXP_NAME="exp8_pdt"
-    DOCKER_ARGS="$DOCKER_ARGS -e EXP_OUTDIR=$EXP_OUTDIR -e EXP_NAME=$EXP_NAME"
+    DOCKER_ARGS="$DOCKER_ARGS -e EXP_NAME=$EXP_NAME"
     ;;
   ycsb_heapsize)
-    EXP_OUTDIR="/ycsb/exp/out/exp00.heapsize.ref"
     EXP_NAME="exp00_heapsize"
-    DOCKER_ARGS="$DOCKER_ARGS -e EXP_OUTDIR=$EXP_OUTDIR -e EXP_NAME=$EXP_NAME"
+    DOCKER_ARGS="$DOCKER_ARGS -e EXP_NAME=$EXP_NAME"
     ;;
   tpcb)
     RESULT_DIR_IN="/results"
@@ -106,6 +97,8 @@ case $1 in
     echo "Unrecognized input arg" && exit 1
     ;;
 esac
+
+mkdir -p $RESULT_DIR
 
 docker run --rm -d --privileged \
     -v $RESULT_DIR:$RESULT_DIR_IN \

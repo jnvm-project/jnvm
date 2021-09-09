@@ -4,7 +4,7 @@ dts="blackhole blackhole-offheap vhmap rhmap vtmap rtmap vslmap rslmap"
 
 [ $# -eq 2 ] && dts="$1 $2"
 
-file="/results/data/exp8.pdt.dat"
+file="${EXP_OUTDIR}/exp8.pdt.ref/data/exp8.pdt.dat"
 
 echo "datatype read update gc execution"
 for dt in $dts ; do

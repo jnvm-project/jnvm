@@ -16,7 +16,7 @@ for mem in $mems ; do
   run_avg=0;run_min=0;run_max=0
   run_gc_avg=0;run_gc_min=0;run_gc_max=0
   for k in `seq 1 $n_run` ; do
-    log=/results/log/infinispan.run.workloadf.true.15000000.${i}.10.zipfian.10.false.true.$mem.$oop.r${k}.log
+    log=${EXP_OUTDIR}/exp00.heapsize.ref/log/infinispan.run.workloadf.true.15000000.${i}.10.zipfian.10.false.true.$mem.$oop.r${k}.log
     [ -f ${log} ] || continue
 
     ratio=$(echo "scale=2; $(cat ${log} | grep -i xmx | awk '{print $2}' | sed s/-Xmx//g | sed s/g//g)/80"| bc)

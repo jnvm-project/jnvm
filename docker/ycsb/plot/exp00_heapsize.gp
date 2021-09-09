@@ -1,5 +1,5 @@
 set terminal png
-set output '/results/ycsb_gc.png'
+set output outdir.'/exp00.heapsize.ref/ycsb_gc.png'
 
 load "/ycsb/plot/styles.inc"
 
@@ -37,6 +37,6 @@ set bmargin 5
 set key inside bottom right samplen 2 width 3 spacing 1 vertical maxrows 3
 
 plot \
-"< /ycsb/plot/gc.sh /results/log/infinispan.run.workloadf.true.15000000.150000.10.zipfian.10.false.true.default.default.r1.log" title "1\\%" smooth bezier ls 6, \
-"< /ycsb/plot/gc.sh /results/log/infinispan.run.workloadf.true.15000000.1500000.10.zipfian.10.false.true.default.default.r1.log" title "10\\%" smooth bezier ls 5 dt 2, \
-"< /ycsb/plot/gc.sh /results/log/infinispan.run.workloadf.true.15000000.15000000.10.zipfian.10.false.true.default.default.r1.log" title "100\\%" smooth bezier ls 7
+"< /ycsb/plot/gc.sh ${EXP_OUTDIR}/exp00.heapsize.ref/log/infinispan.run.workloadf.true.15000000.150000.10.zipfian.10.false.true.default.default.r1.log" title "1\\%" smooth bezier ls 6, \
+"< /ycsb/plot/gc.sh ${EXP_OUTDIR}/exp00.heapsize.ref/log/infinispan.run.workloadf.true.15000000.1500000.10.zipfian.10.false.true.default.default.r1.log" title "10\\%" smooth bezier ls 5 dt 2, \
+"< /ycsb/plot/gc.sh ${EXP_OUTDIR}/exp00.heapsize.ref/log/infinispan.run.workloadf.true.15000000.15000000.10.zipfian.10.false.true.default.default.r1.log" title "100\\%" smooth bezier ls 7

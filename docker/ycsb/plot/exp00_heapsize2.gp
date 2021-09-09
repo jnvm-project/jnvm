@@ -1,5 +1,5 @@
 set terminal png
-set output '/results/ycsb_gc2.png'
+set output outdir.'/exp00.heapsize.ref/ycsb_gc2.png'
 
 load "/ycsb/plot/styles.inc"
 

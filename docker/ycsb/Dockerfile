@@ -3,7 +3,7 @@ FROM gingerbreadz/jnvm-jdk:prebuilt
 ENV PMEM_MOUNT=/pmem0
 ENV NUMA_NODE=0
 ENV JHEAP_SIZE=20g
-ENV EXP_OUTDIR=/ycsb/exp/out/exp0.exectime.ref
+ENV EXP_OUTDIR=/ycsb/exp/out
 ENV EXP_NAME=exp0_exectime
 ENV NAME=ycsb
 

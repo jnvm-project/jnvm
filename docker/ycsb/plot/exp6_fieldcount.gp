@@ -1,5 +1,5 @@
 set terminal png
-set output '/results/ycsb_distribution.png'
+set output outdir.'/exp6.fieldcount.ref/ycsb_fieldcount.png'
 
 load "/ycsb/plot/styles.inc"
 
@@ -32,7 +32,7 @@ unset ytics
 unset ylabel
 
 plot \
-"< cat /results/data/exp3.distribution.dat | grep read | grep \"nvm\" | awk -F, '{printf \"%g %2.2f\\n\", $3, ($10/1000)}'"  using ($2):xtic(1) title "\\SYS" ls 1, \
-"< cat /results/data/exp3.distribution.dat | grep read | grep \"infinispan,\" | awk -F, '{printf \"%g %2.2f\\n\", $3, ($10/1000)}' "  using ($2):xtic(1) title "DAX" ls 2, \
-"< cat /results/data/exp3.distribution.dat | grep update | grep \"nvm\" | awk -F, '{printf \"%g %2.2f\\n\", $3, ($10/1000)}'"  using ($2):xtic(1) title "\\SYS" ls 1 fs pattern 1, \
-"< cat /results/data/exp3.distribution.dat | grep update | grep \"infinispan,\" | awk -F, '{printf \"%g %2.2f\\n\", $3, ($10/1000)}' "  using ($2):xtic(1) title "DAX" ls 2 fs pattern 1
+"< cat ${EXP_OUTDIR}/exp6.fieldcount.ref/data/exp3.distribution.dat | grep read | grep \"nvm\" | awk -F, '{printf \"%g %2.2f\\n\", $3, ($10/1000)}'"  using ($2):xtic(1) title "\\SYS" ls 1, \
+"< cat ${EXP_OUTDIR}/exp6.fieldcount.ref/data/exp3.distribution.dat | grep read | grep \"infinispan,\" | awk -F, '{printf \"%g %2.2f\\n\", $3, ($10/1000)}' "  using ($2):xtic(1) title "DAX" ls 2, \
+"< cat ${EXP_OUTDIR}/exp6.fieldcount.ref/data/exp3.distribution.dat | grep update | grep \"nvm\" | awk -F, '{printf \"%g %2.2f\\n\", $3, ($10/1000)}'"  using ($2):xtic(1) title "\\SYS" ls 1 fs pattern 1, \
+"< cat ${EXP_OUTDIR}/exp6.fieldcount.ref/data/exp3.distribution.dat | grep update | grep \"infinispan,\" | awk -F, '{printf \"%g %2.2f\\n\", $3, ($10/1000)}' "  using ($2):xtic(1) title "DAX" ls 2 fs pattern 1
