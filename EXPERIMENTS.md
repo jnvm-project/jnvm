@@ -178,6 +178,20 @@ Verify your current env settings :
     $ ./bench.sh check-env
 ```
 
+### Plotting the graphs
+
+Graphs will be automatically generated at the end of experiment runs - no
+actions are needed.
+The figures will be available as png images under the results directory.
+
+Yet, it is possible to generate graphs on demand by adding the `--no-run`
+optional parameter :
+```
+    $ ./bench.sh --no-run <EXPERIMENT_COMMAND>
+```
+This simply skips running the benchmark and tries plotting the graph with
+already available logs/data in the results directory.
+
 ### YCSB
 
 We have 9 different experiments using YCSB, run them one by one
@@ -277,7 +291,7 @@ this soon. Here are the steps :
 4. have PMEM_MOUNT, NUMA_NODE, JHEAP_SIZE env vars set to your proper values
 5. `mkdir -p results/tpcb && export EXP_OUTDIR=results/tpcb`
 6. run `/src/test/bin/fault.sh` and wait
-7. TODO write plot instructions
+7. use `bench.sh --no-run tpcb` to generate the plots
 
 ### GO-PMEM
 (TODOmin compute)

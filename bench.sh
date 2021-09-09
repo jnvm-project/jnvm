@@ -10,15 +10,16 @@ SCRIPT_DIR=$(realpath "${SCRIPT_DIR}")
 
 #export NUMA_NODE=0
 #export JHEAP_SIZE="20g"
+export EXP_NORUN="false"
 export RESULT_DIR=$SCRIPT_DIR/results
 
 SCRIPTNAME=`basename $0`
 usage() {
-  echo "USAGE: $SCRIPTNAME ( check-env | pull-all | <EXPERIMENT> )"
+  echo "USAGE: $SCRIPTNAME [--no-run] ( check-env | pull-all | <EXPERIMENT> )"
 }
 
 check_env() {
-  for env_var in PMEM_MOUNT TMPFS_MOUNT NULLFS_MOUNT NUMA_NODE JHEAP_SIZE RESULT_DIR; do
+  for env_var in PMEM_MOUNT TMPFS_MOUNT NULLFS_MOUNT NUMA_NODE JHEAP_SIZE EXP_NORUN RESULT_DIR; do
     echo "$env_var: ${!env_var}"
   done
 }
@@ -35,6 +36,7 @@ case $1 in
     docker pull yohanpipereau/go-pmem:latest
     exit 0
     ;;
+  --no-run) EXP_NORUN="true";;
   ycsb*)
     RESULT_DIR_IN="/ycsb/exp/out"
     DOCKER_ARGS="--mount type=bind,source=${PMEM_MOUNT},destination=/pmem0 \
@@ -114,5 +116,6 @@ mkdir -p $RESULT_DIR
 
 docker run --rm -d --privileged \
     -v $RESULT_DIR:$RESULT_DIR_IN \
+    -e EXP_NORUN=$EXP_NORUN \
     $DOCKER_ARGS \
     $DOCKER_IMAGE
