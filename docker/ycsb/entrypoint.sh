@@ -6,7 +6,7 @@ rm -f ${EXP_OUTDIR}/*
 
 cd /ycsb/exp/
 ./${EXP_NAME:-runall}.sh
-./log_to_data.sh
+./log_to_data.sh ${EXP_NAME//_/.}
 
 for exp_plot in /ycsb/plot/${EXP_NAME}*.gp ; do
     gnuplot $exp_plot
