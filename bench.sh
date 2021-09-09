@@ -86,6 +86,7 @@ case $1 in
     DOCKER_ARGS="$DOCKER_ARGS -e EXP_NAME=$EXP_NAME"
     ;;
   tpcb)
+    RESULT_DIR="${RESULT_DIR}/tpcb"
     RESULT_DIR_IN="/results"
     DOCKER_ARGS="--mount type=bind,source=/tmp/bank,destination=/tmp/bank \
                  -v /var/run/docker.sock:/var/run/docker.sock --net host \
@@ -96,6 +97,7 @@ case $1 in
     DOCKER_IMAGE="gingerbreadz/tpcb_client:latest"
     ;;
   go-pmem)
+    RESULT_DIR="${RESULT_DIR}/go-pmem"
     RESULT_DIR_IN="/results"
     DOCKER_ARGS="--mount type=bind,source=${PMEM_MOUNT},destination=/pmem0 \
                  -e MIN_ORDER=17 -e MAX_ORDER=24 -e NUMA_NODE=${NUMA_NODE}"
