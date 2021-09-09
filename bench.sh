@@ -12,12 +12,18 @@ SCRIPT_DIR=$(realpath "${SCRIPT_DIR}")
 #export JHEAP_SIZE="20g"
 export RESULT_DIR=$SCRIPT_DIR/results
 
+SCRIPTNAME=`basename $0`
+usage() {
+  echo "USAGE: $SCRIPTNAME ( check-env | pull-all | <EXPERIMENT> )"
+}
 
 check_env() {
   for env_var in PMEM_MOUNT TMPFS_MOUNT NULLFS_MOUNT NUMA_NODE JHEAP_SIZE RESULT_DIR; do
     echo "$env_var: ${!env_var}"
   done
 }
+
+[ $# -lt 1 ] && usage && exit 1
 
 case $1 in
   check-env) check_env && exit 0;;
@@ -95,7 +101,7 @@ case $1 in
     DOCKER_IMAGE="yohanpipereau/go-pmem"
     ;;
   *)
-    echo "Unrecognized input arg" && exit 1
+    echo "Unrecognized input arg" && usage && exit 1
     ;;
 esac
 
