@@ -1,5 +1,18 @@
 #!/bin/bash
 
+SCRIPTNAME=`basename $0`
+
+require_env_var() {
+    varname=$1
+    [ -z ${!varname} ] \
+      && echo "$SCRIPTNAME - ERROR - Required environment variable $varname is empty" \
+      && exit 1
+}
+
+require_env_var "JAVA_HOME"
+require_env_var "EXP_OUTDIR"
+#require_env_var "EXP_NAME"
+
 #Dirty fix for hardcoded JAVA_HOME export in latter exp scripts
 hard_jdkpath="/home/anatole/jdk8u/build/linux-x86_64-normal-server-release/jdk"
 mkdir -p $hard_jdkpath && mount --bind $JAVA_HOME $hard_jdkpath
