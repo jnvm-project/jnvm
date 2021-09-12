@@ -30,7 +30,7 @@ set yrange [0:10000]
 unset key
 
 plot \
-"< cat ${EXP_OUTDIR}/exp1.cacheratio.ref/data/exp1.cachesize.dat | egrep -v \"^(300000|900000|1500000|2100000),\" | grep read | grep nvm | awk -F \",\" '{printf \"%3.0f %3.3f\\n\", (($1/3000000)*100), ($10/1000)}' | sort -n " using ($2):xtic(1) title "\\SYS" ls 1, \
-"< cat ${EXP_OUTDIR}/exp1.cacheratio.ref/data/exp1.cachesize.dat | egrep -v \"^(300000|900000|1500000|2100000),\" | grep read | grep \"infinispan,\" | awk -F \",\" '{printf \"%3.0f %3.3f\\n\", (($1/3000000)*100), ($10/1000)}' | sort -n" using ($2):xtic(1) title "DAX" ls 2, \
-"< cat ${EXP_OUTDIR}/exp1.cacheratio.ref/data/exp1.cachesize.dat | egrep -v \"^(300000|900000|1500000|2100000),\" | grep update | grep nvm | awk -F \",\" '{printf \"%3.0f %3.3f\\n\", (($1/3000000)*100), ($10/1000)}' | sort -n " using ($2):xtic(1) title "\\SYS" ls 1 fs pattern 1, \
-"< cat ${EXP_OUTDIR}/exp1.cacheratio.ref/data/exp1.cachesize.dat | egrep -v \"^(300000|900000|1500000|2100000),\" | grep update | grep \"infinispan,\" | awk -F \",\" '{printf \"%3.0f %3.3f\\n\", (($1/3000000)*100), ($10/1000)}' | sort -n" using ($2):xtic(1) title "DAX" ls 2 fs pattern 1
+"< cat ${EXP_OUTDIR}/exp1.cachesize.ref/data/exp1.cachesize.dat | egrep -v \"^(300000|900000|1500000|2100000),\" | grep read_lat | grep nvm | awk -F \",\" '{printf \"%3.0f %3.3f\\n\", (100*$1/$2), ($NF/1000)}' | sort -n " using ($2):xtic(1) title "\\SYS" ls 1, \
+"< cat ${EXP_OUTDIR}/exp1.cachesize.ref/data/exp1.cachesize.dat | egrep -v \"^(300000|900000|1500000|2100000),\" | grep read_lat | grep \"infinispan,\" | awk -F \",\" '{printf \"%3.0f %3.3f\\n\", (100*$1/$2), ($NF/1000)}' | sort -n" using ($2):xtic(1) title "DAX" ls 2, \
+"< cat ${EXP_OUTDIR}/exp1.cachesize.ref/data/exp1.cachesize.dat | egrep -v \"^(300000|900000|1500000|2100000),\" | grep update_lat | grep nvm | awk -F \",\" '{printf \"%3.0f %3.3f\\n\", (100*$1/$2), ($NF/1000)}' | sort -n " using ($2):xtic(1) title "\\SYS" ls 1 fs pattern 1, \
+"< cat ${EXP_OUTDIR}/exp1.cachesize.ref/data/exp1.cachesize.dat | egrep -v \"^(300000|900000|1500000|2100000),\" | grep update_lat | grep \"infinispan,\" | awk -F \",\" '{printf \"%3.0f %3.3f\\n\", (100*$1/$2), ($NF/1000)}' | sort -n" using ($2):xtic(1) title "DAX" ls 2 fs pattern 1

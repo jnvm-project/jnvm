@@ -1,11 +1,25 @@
 #!/bin/bash
 
+#all
 #mems="numa interleaved default preferred"
 #oops="expended default compressed"
-n_run=6
-mems="interleaved"
+#paper
+#n_run=6
+#mems="interleaved"
+#oops="default"
+#artifact
+n_run=1
+mems="default"
 oops="default"
+
+recordcount="15000000"
 entrycounts="15000000 1500000 150000"
+
+#external parameter overrides
+if [ $EXP_PRESET == "tiny" ] ; then
+recordcount="10000"
+entrycounts="10000 1000 100"
+fi
 
 [ $# -ge 1 ] && entrycounts=$1
 
@@ -16,7 +30,7 @@ for mem in $mems ; do
   run_avg=0;run_min=0;run_max=0
   run_gc_avg=0;run_gc_min=0;run_gc_max=0
   for k in `seq 1 $n_run` ; do
-    log=${EXP_OUTDIR}/exp00.heapsize.ref/log/infinispan.run.workloadf.true.15000000.${i}.10.zipfian.10.false.true.$mem.$oop.r${k}.log
+    log=${EXP_OUTDIR}/exp00.heapsize.ref/log/infinispan.run.workloadf.true.${recordcount}.${i}.10.100.zipfian.10.false.true.$mem.$oop.r${k}.log
     [ -f ${log} ] || continue
 
     ratio=$(echo "scale=2; $(cat ${log} | grep -i xmx | awk '{print $2}' | sed s/-Xmx//g | sed s/g//g)/80"| bc)
@@ -26,7 +40,7 @@ for mem in $mems ; do
     run=$(echo "scale=2;$(cat ${log} | grep "\[TRANSACTION\]" | grep Average | awk '{print $3*10^-9}')-${run_gc}"|bc)
     load_gc=$(echo "$gc - $run_gc" | bc)
     load=$(echo "$(cat ${log} | grep "INIT" | grep Average | awk '{print $3*10^-9}')-${load_gc}"|bc)
-    ratio=$(echo "scale=0; 100*"${i}/"15000000"| bc)
+    ratio=$(echo "scale=0; 100*"${i}/"${recordcount}"| bc)
     m=$(echo $mem | head -c 1)
     p=$(echo $oop | head -c 1)
 

@@ -29,9 +29,9 @@ set yrange [0:1.1]
 set ytics 0,0.2,1
 
 plot \
-"< cat ${EXP_OUTDIR}/exp5.concurrent.ref/data/exp5.concurrent.dat | grep transaction | grep loada | grep run | grep nvm | awk -F, '{printf \"%d %f\\n\", $5,($4*1e-6)/($11*1e-9)}' | sort -n" using 1:2 title "\\SYSPDT" with linespoints ls 1 pointsize .7, \
-"< cat ${EXP_OUTDIR}/exp5.concurrent.ref/data/exp5.concurrent.dat | grep transaction | grep loada | grep run | grep -e ^100000, | awk -F, '{printf \"%d %f\\n\", $5,($4*1e-6)/($11*1e-9)}' | sort -n" using 1:2 title "\\FS" with linespoints ls 2 pointsize .7, \
-"< cat ${EXP_OUTDIR}/exp5.concurrent.ref/data/exp5.concurrent.dat | grep transaction | grep loada | grep run | grep -e ^1000000, | awk -F, '{printf \"%d %f\\n\", $5,($4*1e-6)/($11*1e-9)}' | sort -n" using 1:2 title "Volatile"with linespoints ls 7 pointsize .7
+"< cat ${EXP_OUTDIR}/exp5.concurrent.ref/data/exp5.concurrent.dat | grep transaction | grep loada | grep run | grep nvm | awk -F, '{printf \"%d %f\\n\", $6,($5*1e3)/($NF)}' | sort -n" using 1:2 title "\\SYSPDT" with linespoints ls 1 pointsize .7, \
+"< cat ${EXP_OUTDIR}/exp5.concurrent.ref/data/exp5.concurrent.dat | grep transaction | grep loada | grep run | grep infinispan, | grep pmem | awk -F, '{printf \"%d %f\\n\", $6,($5*1e3)/($NF)}' | sort -n" using 1:2 title "\\FS" with linespoints ls 2 pointsize .7, \
+"< cat ${EXP_OUTDIR}/exp5.concurrent.ref/data/exp5.concurrent.dat | grep transaction | grep loada | grep run | grep infinispan, | grep none | awk -F, '{printf \"%d %f\\n\", $6,($5*1e3)/($NF)}' | sort -n" using 1:2 title "Volatile"with linespoints ls 7 pointsize .7
 
 set xlabel "\\# threads" offset -15,0.2
 unset ylabel
@@ -43,9 +43,9 @@ set key above right samplen 2 width 2 spacing 2 vertical maxrows 1
 set key tmargin
 
 plot \
-"< cat ${EXP_OUTDIR}/exp5.concurrent.ref/data/exp5.concurrent.dat | grep transaction | grep loadc | grep run | grep nvm | awk -F, '{printf \"%d %f\\n\", $5,($4*1e-6)/($11*1e-9)}' | sort -n" using 1:2 title "\\SYSPDT" with linespoints ls 1 pointsize .7, \
-"< cat ${EXP_OUTDIR}/exp5.concurrent.ref/data/exp5.concurrent.dat | grep transaction | grep loadc | grep run | grep -e ^100000, | awk -F, '{printf \"%d %f\\n\", $5,($4*1e-6)/($11*1e-9)}' | sort -n" using 1:2 title "\\FS" with linespoints ls 2 pointsize .7, \
-"< cat ${EXP_OUTDIR}/exp5.concurrent.ref/data/exp5.concurrent.dat | grep transaction | grep loadc | grep run | grep -e ^1000000, | awk -F, '{printf \"%d %f\\n\", $5,($4*1e-6)/($11*1e-9)}' | sort -n" using 1:2 title "Volatile"with linespoints ls 7 pointsize .7
+"< cat ${EXP_OUTDIR}/exp5.concurrent.ref/data/exp5.concurrent.dat | grep transaction | grep loadc | grep run | grep nvm | awk -F, '{printf \"%d %f\\n\", $6,($5*1e3)/($NF)}' | sort -n" using 1:2 title "\\SYSPDT" with linespoints ls 1 pointsize .7, \
+"< cat ${EXP_OUTDIR}/exp5.concurrent.ref/data/exp5.concurrent.dat | grep transaction | grep loadc | grep run | grep infinispan, | grep pmem | awk -F, '{printf \"%d %f\\n\", $6,($5*1e3)/($NF)}' | sort -n" using 1:2 title "\\FS" with linespoints ls 2 pointsize .7, \
+"< cat ${EXP_OUTDIR}/exp5.concurrent.ref/data/exp5.concurrent.dat | grep transaction | grep loadc | grep run | grep infinispan, | grep none | awk -F, '{printf \"%d %f\\n\", $6,($5*1e3)/($NF)}' | sort -n" using 1:2 title "Volatile"with linespoints ls 7 pointsize .7
 
 unset ylabel
 unset xlabel
@@ -56,3 +56,7 @@ set yrange [0:0.75]
 set ytics 0,0.2,0.7
 
 unset multiplot
+
+# Mop -> *1e-6
+# ns -> *1e-9
+# op/ns -> Mops -> *1e3
