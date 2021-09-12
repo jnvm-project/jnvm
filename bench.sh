@@ -117,5 +117,6 @@ mkdir -p $RESULT_DIR
 docker run --rm -d --privileged \
     -v $RESULT_DIR:$RESULT_DIR_IN \
     -e EXP_NORUN=$EXP_NORUN \
+    -e EXP_PRESET=$EXP_PRESET \
     $DOCKER_ARGS \
     $DOCKER_IMAGE

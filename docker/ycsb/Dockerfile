@@ -6,6 +6,7 @@ ENV JHEAP_SIZE=20g
 ENV EXP_OUTDIR=/ycsb/exp/out
 ENV EXP_NAME=exp0_exectime
 ENV EXP_NORUN=false
+ENV EXP_PRESET=default
 ENV NAME=ycsb
 
 ARG YCSB_PATH

@@ -74,6 +74,7 @@ The goal is then to expose one nvdimm as a block device in `fsdax` mode, using
 We will not cover how to [emulate PMEM](https://pmem.io/2016/02/22/pm-emulation.html) or create a tmpfs.
 
 1. Check existing active namespaces in fsdax mode.
+
 ```
     $ ndctl list -Nv -m fsdax
 [
@@ -94,11 +95,13 @@ In this sample output, we can see that a namespace in fsdax mode is accessible f
 Skip step 2 if this is the kind of output you get.
 
 2. Creating a fsdax namespace
+
 Often this step involves understanding how the nv-dimms are currently configured.
 Providing generic instructions is not easy. I will try to add some in the future.
 For now, refer to the official ndctl documentation and seek live troubleshooting.
 
 3. Creating and mounting the filesystem.
+
 Instructions for pmem device `/dev/pmemX`, where X is the device you identified earlier.
 ```
     $ mkdir -p /pmemX
@@ -178,6 +181,24 @@ Verify your current env settings :
     $ ./bench.sh check-env
 ```
 
+### Test runs
+
+We provide another ENV var `EXP_PRESET` which can be used to select premade
+experiment-wide settings. It currently supports two values `default` or `tiny`.
+The `tiny` preset is especially useful to quickly run every experiment and
+control whether everything is working properly. This preset simply sets down
+considerably the number of records (dataset size) and operations for the experiments.
+Use it this way:
+```
+    $ EXP_PRESET="tiny" ./bench.sh <EXPERIMENT_COMMAND>
+```
+When activated, every run should complete under 2seconds and so the total
+compute time is around 20min for all experiments.
+Bear in mind though, that with runs lasting less than 2secs, the results and
+graphs won't match the values produced with the `default` preset which takes longer.
+The compute times listed afterwards are the ones for the `default` preset when
+not stated otherwise.
+
 ### Plotting the graphs
 
 Graphs will be automatically generated at the end of experiment runs - no
@@ -199,6 +220,15 @@ We have 9 different experiments using YCSB, run them one by one
 ```
     $ ./bench.sh ycsb_all
 ```
+
+At this stage, you might want to run the following to control that everything
+is in proper working order:
+```
+    $ EXP_PRESET="tiny" ./bench.sh ycsb_all
+```
+This step should take just around 15min to run everything and generate graphs.
+The graphs may be a bit distorted but if all PNG are non-empty and all data
+points inside can be seen, then it is safe to proceed with the next (longer) runs.
 
 #### YCSB Throughput (fig 7)
 (TODOmin compute)
