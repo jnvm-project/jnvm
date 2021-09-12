@@ -30,6 +30,8 @@ case $EXP_NORUN in
     ;;
 esac
 
+rm -rf ${EXP_OUTDIR}/${EXP_NAME//_/.}*.ref/data/*.dat
+rm -rf ${EXP_OUTDIR}/${EXP_NAME//_/.}*.ref/*.png
 ./log_to_data.sh ${EXP_NAME//_/.}
 
 for exp_plot in /ycsb/plot/${EXP_NAME}*.gp ; do
