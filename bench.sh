@@ -33,7 +33,7 @@ case $1 in
     docker pull gingerbreadz/ycsb:latest
     docker pull gingerbreadz/transactions:latest
     docker pull gingerbreadz/tpcb_client:latest
-    docker pull yohanpipereau/go-pmem:latest
+    docker pull gingerbreadz/go-pmem:latest
     exit 0
     ;;
   --no-run) EXP_NORUN="true";;
@@ -102,8 +102,13 @@ case $1 in
     RESULT_DIR="${RESULT_DIR}/go-pmem"
     RESULT_DIR_IN="/results"
     DOCKER_ARGS="--mount type=bind,source=${PMEM_MOUNT},destination=/pmem0 \
-                 -e MIN_ORDER=17 -e MAX_ORDER=24 -e NUMA_NODE=${NUMA_NODE}"
-    DOCKER_IMAGE="yohanpipereau/go-pmem"
+                 -e NUMA_NODE=${NUMA_NODE}"
+    [ "$EXP_PRESET" == "tiny" ] \
+        && DOCKER_ARGS="$DOCKER_ARGS -e MIN_ORDER=5 -e MAX_ORDER=14 -e OP_ORDER=14" \
+        || DOCKER_ARGS="$DOCKER_ARGS -e MIN_ORDER=16 -e MAX_ORDER=25 -e OP_ORDER=27"
+        #|| DOCKER_ARGS="$DOCKER_ARGS -e MIN_ORDER=17 -e MAX_ORDER=26 -e OP_ORDER=27"
+        #range used in paper: 2^17 -> 2^26 - unlock only if PMEM SIZE > 160GB
+    DOCKER_IMAGE="gingerbreadz/go-pmem:latest"
     ;;
   *)
     echo "Unrecognized input arg" && usage && exit 1
