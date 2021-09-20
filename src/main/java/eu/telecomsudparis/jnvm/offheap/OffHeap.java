@@ -9,6 +9,7 @@ import eu.telecomsudparis.jnvm.config.Environment;
 import eu.telecomsudparis.jnvm.util.persistent.RecoverableMap;
 import eu.telecomsudparis.jnvm.util.persistent.RecoverableHashMap;
 import eu.telecomsudparis.jnvm.util.persistent.RecoverableStrongHashMap;
+import eu.telecomsudparis.jnvm.util.persistent.RecoverableStrongConcurrentHashMap;
 import eu.telecomsudparis.jnvm.util.persistent.RecoverableStrongTreeMap;
 import eu.telecomsudparis.jnvm.util.persistent.RecoverableStrongSkipListMap;
 import eu.telecomsudparis.jnvm.util.persistent.AutoPersistMap;
@@ -56,11 +57,13 @@ public class OffHeap {
         L(12, RecoverableStrongTreeMap.OffHeapNode.class),
         M(13, RecoverableStrongSkipListMap.class),
         N(14, RecoverableStrongSkipListMap.OffHeapNode.class),
-        O(15, AutoPersistMap.class),
-        P(16, OffHeapRedoLog.class),
-        Q(17, OffHeapRedoLog.CopyEntry.class),
-        R(18, OffHeapRedoLog.ValidateEntry.class),
-        S(19, OffHeapRedoLog.InvalidateEntry.class);
+        O(15, RecoverableStrongConcurrentHashMap.class),
+        P(16, RecoverableStrongConcurrentHashMap.OffHeapNode.class),
+        Q(17, AutoPersistMap.class),
+        R(18, OffHeapRedoLog.class),
+        S(19, OffHeapRedoLog.CopyEntry.class),
+        T(20, OffHeapRedoLog.ValidateEntry.class),
+        U(21, OffHeapRedoLog.InvalidateEntry.class);
 
         private static final Map<Class<?>, Long> BY_NAME = new ConcurrentHashMap<>();
         private static final Map<Long, Class<?>> BY_ID = new ConcurrentHashMap<>();
