@@ -95,8 +95,22 @@ public class OffHeapArray<E extends OffHeapObject>
         return oldValue;
     }
 
+    public void clear(long index) {
+        unsetElem( index );
+    }
+
     public void clear() {
         reset();
+    }
+
+    public E getOrDefault(long index, E e) {
+        long addr = getLongField( elemOffset( index ) );
+        return ( addr == -1 ) ? e
+                : OffHeap.instanceFromOffset( OffHeap.baseAddr() + addr );
+    }
+
+    public void set(long index, E e) {
+        setElem( index, e );
     }
 
     public OffHeapArray clone() {

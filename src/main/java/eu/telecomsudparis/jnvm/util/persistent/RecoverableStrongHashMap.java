@@ -3,10 +3,12 @@ package eu.telecomsudparis.jnvm.util.persistent;
 import java.util.Set;
 import java.util.Map;
 import java.util.List;
+import java.util.Queue;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.AbstractMap;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Callable;
@@ -29,6 +31,7 @@ public class RecoverableStrongHashMap<K extends OffHeapObject, V extends OffHeap
 
     private static final int DEFAULT_SIZE = 16;
 
+    private transient Queue<Long> reclaimed;
     private transient Map<K,OffHeapNode<K,V>> index;
     private OffHeapArray<OffHeapNode<K,V>> table;
 
@@ -40,6 +43,7 @@ public class RecoverableStrongHashMap<K extends OffHeapObject, V extends OffHeap
 
         private final transient K key;
         private transient V value;
+        private long tableIndex = -1;
         //private transient AtomicReference<V> value;
 
         //Constructor
@@ -126,6 +130,7 @@ public class RecoverableStrongHashMap<K extends OffHeapObject, V extends OffHeap
     public RecoverableStrongHashMap(int initialSize) {
         index = new ConcurrentHashMap<>( initialSize );
         table = new OffHeapArray<>( initialSize );
+        reclaimed = new ConcurrentLinkedDeque<>();
         //OffHeap.Instances.put(table.getOffset(), this);
         OffHeap.getAllocator().blockFromOffset( table.getOffset() ).setKlass( CLASS_ID );
     }
@@ -133,6 +138,7 @@ public class RecoverableStrongHashMap<K extends OffHeapObject, V extends OffHeap
     //Reconstructor
     public RecoverableStrongHashMap(long offset) {
         table = (OffHeapArray<OffHeapNode<K,V>>)OffHeapArray.rec( offset );
+        this.reclaimed = new ConcurrentLinkedDeque<>();
         //OffHeap.instances.put(table.getOffset(), this);
 //        long length = table.length();
 //        index = new ConcurrentHashMap<>( (int) length );
@@ -224,8 +230,12 @@ public class RecoverableStrongHashMap<K extends OffHeapObject, V extends OffHeap
             final int idxPerThread = ((int) length) / threadCount ;
             LongStream.range(0, threadCount).parallel().forEach( i -> {
                 for( long k=i*idxPerThread; k<(i+1)*idxPerThread; k++ ) {
-                  OffHeapNode<K,V> entry = table.get( k );
-                  index.put( entry.getKey(), entry );
+                  OffHeapNode<K,V> entry = table.getOrDefault( k, null );
+                  if( entry != null ) {
+                      index.put( entry.getKey(), entry );
+                  } else {
+                      reclaimed.add( k );
+                  }
                 }
             } );
         }
@@ -289,7 +299,12 @@ public class RecoverableStrongHashMap<K extends OffHeapObject, V extends OffHeap
         OffHeapNode<K,V> entry = null; V oldValue = null;
         if( (entry = index.get( key )) == null ) {
             entry = new OffHeapNode<>( key, value );
-            table.add( entry );
+            Long tableIndex = reclaimed.poll();
+            if( tableIndex == null ) {
+                entry.tableIndex = table.add( entry );
+            } else {
+                table.set( tableIndex, entry );
+            }
             index.put( key, entry );
             entry.validate();
         } else {
@@ -319,10 +334,14 @@ public class RecoverableStrongHashMap<K extends OffHeapObject, V extends OffHeap
     public V remove(Object key) {
         checkIndexNonNull();
         OffHeapNode<K,V> entry = null; V oldValue = null;
+        long tableIndex;
         if( (entry = index.get( key )) != null ) {
             oldValue = entry.getValue();
+            tableIndex = entry.tableIndex;
             index.remove( key );
-            //TODO: remove node from OffHeap table
+            entry.invalidate();
+            table.clear( tableIndex );
+            reclaimed.add( tableIndex );
         }
         return oldValue;
     }
@@ -399,11 +418,15 @@ public class RecoverableStrongHashMap<K extends OffHeapObject, V extends OffHeap
             final int idxPerThread = ((int) length) / threadCount ;
             LongStream.range(0, threadCount).parallel().forEach( i -> {
                 for( long k=i*idxPerThread; k<(i+1)*idxPerThread; k++ ) {
-                  OffHeapNode<K,V> node = table.get( k );
-                  if( !node.mark() ) {
-                    node.descend();
-                  }
-                  index.put( node.getKey(), node );
+                    OffHeapNode<K,V> node = table.getOrDefault( k, null );
+                    if( node != null ) {
+                        if( !node.mark() ) {
+                            node.descend();
+                        }
+                        index.put( node.getKey(), node );
+                    } else {
+                        reclaimed.add( k );
+                    }
                 }
             } );
         } else if( index.size() <= 20 ) {
