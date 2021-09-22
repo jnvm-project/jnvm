@@ -41,6 +41,10 @@ public class OffHeapRedoLog implements OffHeapObject {
         public void descend() {
             //No-op;
         }
+        public void destroy() {
+            OffHeap.getAllocator().freeBlock( new MemoryBlockHandle( getNew() ));
+            super.destroy();
+        }
 
         public final long getOld() { return getAddrField( offsets[0] ); }
         public final long getNew() { return getAddrField( offsets[1] ); }
