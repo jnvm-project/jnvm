@@ -412,6 +412,7 @@ public class RecoverableStrongConcurrentHashMap<K extends OffHeapObject, V exten
     }
     public void validate() { table.validate(); }
     public void invalidate() { table.invalidate(); }
+    public void resetFa() { table.resetFa(); }
     public void destroy() { table.destroy(); }
     public void flush() { table.flush(); }
     public boolean mark() { return table.mark(); }

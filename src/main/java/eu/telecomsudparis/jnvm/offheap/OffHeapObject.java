@@ -11,6 +11,7 @@ public interface OffHeapObject {
     void destroy();
     void validate();
     void invalidate();
+    void resetFa();
     void flush();
     default void fence() { unsafe.pfence(); }
     long classId();

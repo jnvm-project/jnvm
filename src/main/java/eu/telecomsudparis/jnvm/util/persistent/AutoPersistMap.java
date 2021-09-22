@@ -219,6 +219,7 @@ public class AutoPersistMap<K extends OffHeapObject,
     }
     public void validate() { map.validate(); }
     public void invalidate() { map.invalidate(); }
+    public void resetFa() { map.resetFa(); }
     public void destroy() { map.destroy(); }
     public void flush() { map.flush(); }
     public boolean mark() { return map.mark(); }

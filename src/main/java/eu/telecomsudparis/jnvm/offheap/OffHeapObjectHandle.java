@@ -57,6 +57,7 @@ public abstract class OffHeapObjectHandle implements OffHeapObject {
         long b;
         if( faBase != -1L ) { b = faBase; }
         else {
+            OffHeap.getLog().touch( this );
             MemoryBlockHandle block = OffHeap.getAllocator().allocateBlock();
             MemoryBlockHandle.copy( block.getOffset(), this.offset );
             faBase = block.base();
@@ -102,6 +103,11 @@ public abstract class OffHeapObjectHandle implements OffHeapObject {
         } else {
             this.destroy();
         }
+    }
+
+    public void resetFa() {
+        //Duplicated blocks are freed when clearing the log
+        this.faBase = -1L;
     }
 
     public void flush() {

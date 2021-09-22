@@ -1,5 +1,7 @@
 package eu.telecomsudparis.jnvm.offheap;
 
+import java.util.ArrayList;
+
 import eu.telecomsudparis.jnvm.offheap.MemoryBlockHandle;
 import eu.telecomsudparis.jnvm.offheap.OffHeapObjectHandle;
 import eu.telecomsudparis.jnvm.offheap.OffHeapObject;
@@ -11,6 +13,7 @@ public class OffHeapRedoLog implements OffHeapObject {
     private static final long CLASS_ID = OffHeap.Klass.register( OffHeapRedoLog.class );
     private static final int DEFAULT_SIZE = 16;
 
+    private ArrayList<OffHeapObject> touched;
     private OffHeapArray<Entry> table;
 
     private interface Entry extends OffHeapObject {
@@ -129,6 +132,7 @@ public class OffHeapRedoLog implements OffHeapObject {
     }
     public OffHeapRedoLog(int initialSize) {
         table = new OffHeapArray<>( initialSize );
+        touched = new ArrayList<>();
         //OffHeap.Instances.put(table.getOffset(), this);
         OffHeap.getAllocator()
                .blockFromOffset( table.getOffset() ).setKlass( CLASS_ID );
@@ -136,6 +140,7 @@ public class OffHeapRedoLog implements OffHeapObject {
     //Reconstructor
     public OffHeapRedoLog(long offset) {
         table = (OffHeapArray<Entry>)OffHeapArray.rec( offset );
+        touched = new ArrayList<>();
         //OffHeap.instances.put(table.getOffset(), this);
         //Prevent redo-ing when recovering from in-complete state
         MemoryBlockHandle headBlock = OffHeap.getAllocator().blockFromOffset( this.getOffset() );
@@ -159,6 +164,9 @@ public class OffHeapRedoLog implements OffHeapObject {
     public void logInvalidate(OffHeapObject oho) {
         table.add( new InvalidateEntry( oho ) );
     }
+    public void touch(OffHeapObject oho) {
+        touched.add( oho );
+    }
 
     /**
       * Invoked either after a crash, or at the end of an FA block.
@@ -166,6 +174,7 @@ public class OffHeapRedoLog implements OffHeapObject {
       *     1 _ fence and validate log
       *     2 _ apply entries
       *     3 _ fence, invalidate log
+      *     4 _ reset faBase indirection in affected proxies
       *  POST _ nothing, entries are cleared at the start of next FA block
       *
       */
@@ -178,6 +187,9 @@ public class OffHeapRedoLog implements OffHeapObject {
         this.fence();
         //this.invalidate(); but « raw » to avoid FA instrumentation
         headBlock.free();
+        //reset FA state in affected proxies
+        touched.forEach( OffHeapObject::resetFa );
+        touched.clear();
     }
 
     /**
@@ -209,6 +221,7 @@ public class OffHeapRedoLog implements OffHeapObject {
     }
     public void validate() { table.validate(); }
     public void invalidate() { table.invalidate(); }
+    public void resetFa() { table.resetFa(); }
     public void destroy() { table.destroy(); }
     public void flush() { table.flush(); }
     public boolean mark() { return table.mark(); }

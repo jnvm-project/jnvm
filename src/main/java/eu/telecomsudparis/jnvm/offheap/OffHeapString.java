@@ -142,6 +142,7 @@ public class OffHeapString implements OffHeapObject, Comparable<OffHeapString> {
     }
     public void validate() { value.validate(); }
     public void invalidate() { value.invalidate(); }
+    public void resetFa() { value.resetFa(); }
     public void destroy() { value.destroy(); }
     public void flush() { value.flush(); }
     public boolean mark() { return value.mark(); }

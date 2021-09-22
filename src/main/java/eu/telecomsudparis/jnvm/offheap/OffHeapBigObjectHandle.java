@@ -76,8 +76,10 @@ public abstract class OffHeapBigObjectHandle implements OffHeapObject {
 
     private long addressFromFieldOffsetFARW(long fieldOffset) {
         long b;
-        if( faBases == null )
+        if( faBases == null ) {
             faBases = new long[ bases.length ];
+            OffHeap.getLog().touch( this );
+        }
         if( (b=faBases[ (int) ( fieldOffset / BYTES_PER_BASE ) ]) == 0 ) {
             MemoryBlockHandle block = OffHeap.getAllocator().allocateBlock();
             long old = this.bases[ (int) ( fieldOffset / BYTES_PER_BASE ) ] - 8;
@@ -177,6 +179,11 @@ public abstract class OffHeapBigObjectHandle implements OffHeapObject {
             MemoryBlockHandle block = OffHeap.getAllocator().blockFromOffset( bases[i] - 8 );
             block.flush();
         }
+    }
+
+    public void resetFa() {
+        //Duplicated blocks are freed when clearing the log
+        this.faBases = null;
     }
 
     public abstract long size();
