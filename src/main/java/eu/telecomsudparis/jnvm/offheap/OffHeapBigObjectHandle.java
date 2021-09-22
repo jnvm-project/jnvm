@@ -157,23 +157,27 @@ public abstract class OffHeapBigObjectHandle implements OffHeapObject {
     }
 
     public void flush() {
-        /*
         //Flush object blocks finely
         final long blockSize = MemoryBlockHandle.size();
-        long flushSize = size() + bases.length * 16;
+        long dataSize = size();
         int i=0;
-        while( flushSize >= blockSize ) {
+        while( dataSize > BYTES_PER_BASE ) {
             unsafe.writebackMemory( bases[i] - 8, blockSize );
             i++;
-            flushSize -= blockSize;
+            dataSize -= BYTES_PER_BASE;
         }
-        unsafe.writebackMemory( bases[i] - 8, flushSize );
-        */
+        //Only flush used bytes in last block
+        //unsafe.writebackMemory( bases[i] - 8, dataSize );
+        //Flush last block whole
+        unsafe.writebackMemory( bases[i] - 8, blockSize );
+        /*
         //Flush object blocks whole
+        //Bad implementation, would flush unused blocks/slots in arrays
         for(int i=0; i<bases.length; i++) {
             MemoryBlockHandle block = OffHeap.getAllocator().blockFromOffset( bases[i] - 8 );
             block.flush();
         }
+        */
     }
 
     public void resetFa() {
