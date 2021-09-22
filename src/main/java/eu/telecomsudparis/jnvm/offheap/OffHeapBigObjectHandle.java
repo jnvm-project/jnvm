@@ -149,16 +149,11 @@ public abstract class OffHeapBigObjectHandle implements OffHeapObject {
     public void invalidate() {
         //block().setRecordable( false );
         //this.recordable = false;
-        //TODO URGENT BUG - invalidate log entries generate bugs
-        //somehow this stopped working, investigate why
-/*
         if( OffHeap.recording && recordable ) {
             OffHeap.getLog().logInvalidate( this );
         } else {
             this.destroy();
         }
-*/
-        this.destroy();
     }
 
     public void flush() {

@@ -98,7 +98,9 @@ public class OffHeap {
         }
 
         private static long userKlassOffset(long userKlassId) {
-            return userKlassId + Klass.values().length;
+            //Offset by number of hard coded classes + 1
+            //  since userKlassId numbering starts from 0
+            return userKlassId + ( 1 + Klass.values().length );
         }
 
         private static void registerKons(Class<?> klass, long klassId) {
