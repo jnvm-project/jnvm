@@ -74,6 +74,14 @@ public interface OffHeapObject {
         return OffHeap.instanceFromOffset( OffHeap.baseAddr() + getLongField( fieldOffset ) );
     }
 
+    default void setAddrField(long fieldOffset, long value) {
+        setLongField( fieldOffset, value - OffHeap.baseAddr() );
+    }
+
+    default long getAddrField(long fieldOffset) {
+        return OffHeap.baseAddr() + getLongField( fieldOffset );
+    }
+
     default String getStringField(long fieldOffset) {
         return getHandleField( fieldOffset ).toString();
     }

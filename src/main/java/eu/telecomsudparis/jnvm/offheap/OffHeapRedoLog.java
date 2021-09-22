@@ -28,8 +28,8 @@ public class OffHeapRedoLog implements OffHeapObject {
         //Constructor
         CopyEntry(long orig, long copy) {
             super();
-            setLongField( offsets[0], orig );
-            setLongField( offsets[1], copy );
+            setAddrField( offsets[0], orig );
+            setAddrField( offsets[1], copy );
         }
         //Reconstructor
         public CopyEntry(MemoryBlockHandle block) { super( block.getOffset() ); }
@@ -42,8 +42,8 @@ public class OffHeapRedoLog implements OffHeapObject {
             //No-op;
         }
 
-        public final long getOld() { return getLongField( offsets[0] ); }
-        public final long getNew() { return getLongField( offsets[1] ); }
+        public final long getOld() { return getAddrField( offsets[0] ); }
+        public final long getNew() { return getAddrField( offsets[1] ); }
         public void apply() { MemoryBlockHandle.copy(getOld(), getNew()); }
     }
 
@@ -60,7 +60,7 @@ public class OffHeapRedoLog implements OffHeapObject {
 */
         ValidateEntry(long block) {
             super();
-            setLongField( offsets[0], block );
+            setAddrField( offsets[0], block );
         }
         public ValidateEntry(MemoryBlockHandle block) { super( block.getOffset() ); }
         public ValidateEntry(Void v, long offset) { super( offset ); }
@@ -73,7 +73,7 @@ public class OffHeapRedoLog implements OffHeapObject {
 
         public final MemoryBlockHandle getBlock() {
             return OffHeap.getAllocator()
-                          .blockFromOffset( getLongField( offsets[0] ));
+                          .blockFromOffset( getAddrField( offsets[0] ));
         }
         public void apply() { getBlock().commit(); getBlock().setRecordable( true ); }
 //        public void apply() { getHandleField( offsets[0] ).validate(); }
