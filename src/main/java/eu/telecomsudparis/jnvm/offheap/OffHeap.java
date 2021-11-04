@@ -28,7 +28,7 @@ public class OffHeap {
 
     private transient static final MemoryPool pool;
     private transient static final MemoryAllocator allocator;
-    private transient static final ThreadSafeBitSet marks;
+    private transient static ThreadSafeBitSet marks;
     public transient static final Map<Long, OffHeapObject> instances;
 
     //TODO Have a proper metablock layout declaration
@@ -228,6 +228,7 @@ public class OffHeap {
             //end = System.nanoTime();
             //System.out.println("Allocator finished in (nsec): " + (end - start) );
         }
+        marks = null;
     }
 
     private OffHeap() {
