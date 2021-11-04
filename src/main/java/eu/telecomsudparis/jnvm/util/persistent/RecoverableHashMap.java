@@ -161,6 +161,7 @@ public class RecoverableHashMap<K extends OffHeapObject, V extends OffHeapObject
         } else {
           ret = new RecoverableHashMap( initialSize );
           OffHeap.rootInstances.put( new OffHeapString( name ), ret );
+          ret.validate();
         }
         return ret;
     }
@@ -201,8 +202,10 @@ public class RecoverableHashMap<K extends OffHeapObject, V extends OffHeapObject
         checkIndexNonNull();
         Long idx; V oldValue = null;
         if( (idx = index.get( key )) == null ) {
-            idx = table.add( new OffHeapNode<>( key, value ) );
+            OffHeapNode<K,V> entry = new OffHeapNode<>( key, value );
+            idx = table.add( entry );
             index.put( key, idx );
+            entry.validate();
         } else {
             oldValue = table.get( idx ).setValue( value );
         }
@@ -231,8 +234,11 @@ public class RecoverableHashMap<K extends OffHeapObject, V extends OffHeapObject
         checkIndexNonNull();
         Long idx; V oldValue = null;
         if( (idx = index.get( key )) != null ) {
-            oldValue = table.remove( idx ).getValue();
+            OffHeapNode<K,V> entry = table.remove( idx );
+            oldValue = entry.getValue();
             index.remove( key );
+            entry.invalidate();
+            table.clear( idx );
         }
         return oldValue;
     }
