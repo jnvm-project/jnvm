@@ -1,6 +1,7 @@
 package eu.telecomsudparis.jnvm.offheap;
 
 import java.util.Arrays;
+import java.util.ArrayList;
 
 import eu.telecomsudparis.jnvm.offheap.OffHeap;
 
@@ -12,6 +13,7 @@ public abstract class OffHeapBigObjectHandle implements OffHeapObject {
     private transient long[] bases = null;
     private transient long[] faBases = null;
     private transient boolean recordable = false;
+    private transient ArrayList<Integer> touchedFaBases = new ArrayList<>();
     //TODO Evaluate whether recordable can be deducted from validity bit
 
     //Constructor
@@ -78,7 +80,6 @@ public abstract class OffHeapBigObjectHandle implements OffHeapObject {
         long b;
         if( faBases == null ) {
             faBases = new long[ bases.length ];
-            OffHeap.getLog().touch( this );
         }
         if( (b=faBases[ (int) ( fieldOffset / BYTES_PER_BASE ) ]) == 0 ) {
             MemoryBlockHandle block = OffHeap.getAllocator().allocateBlock();
@@ -87,6 +88,9 @@ public abstract class OffHeapBigObjectHandle implements OffHeapObject {
             faBases[(int) ( fieldOffset / BYTES_PER_BASE )] = block.base();
             OffHeap.getLog().logCopy( old, block.getOffset() );
             b = block.base();
+            this.touchedFaBases.add( (int) ( fieldOffset / BYTES_PER_BASE ) );
+            if( touchedFaBases.size() == 1 )
+                OffHeap.getLog().touch( this );
         }
         return b + fieldOffset % BYTES_PER_BASE + 8;
     }
@@ -132,6 +136,7 @@ public abstract class OffHeapBigObjectHandle implements OffHeapObject {
         this.offset = -1L;
         this.bases = null;
         this.faBases = null;
+        this.touchedFaBases.clear();
     }
 
     public void validate() {
@@ -182,7 +187,8 @@ public abstract class OffHeapBigObjectHandle implements OffHeapObject {
 
     public void resetFa() {
         //Duplicated blocks are freed when clearing the log
-        this.faBases = null;
+        touchedFaBases.forEach( base -> { faBases[base] = 0; } );
+        touchedFaBases.clear();
     }
 
     public abstract long size();
