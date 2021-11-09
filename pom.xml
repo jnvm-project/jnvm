@@ -15,6 +15,7 @@
 
   <modules>
     <module>jnvm-core</module>
+    <module>jnvm-transformer</module>
   </modules>
 
   <build>
