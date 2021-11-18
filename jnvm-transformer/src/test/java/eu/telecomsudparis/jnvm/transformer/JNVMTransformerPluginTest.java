@@ -31,7 +31,7 @@ class JNVMTransformerPluginTest {
         return Stream.of(
             FourLongs.class,
             Simple.class,
-            Complexe.class,
+            //Complexe.class,
             InvalidSimple.class
         );
     }
