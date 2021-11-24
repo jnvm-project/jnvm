@@ -55,7 +55,21 @@ public class JNVMTransformerPlugin implements Plugin {
     }
 
     static class SIZE {
+        private static final Map<TypeDescription, Long> cache = new HashMap<>();
+
         protected static long of(TypeDescription type) {
+            return cache.computeIfAbsent(type, t -> computeFor(t) + ofParent(t));
+        }
+
+        protected static long ofParent(TypeDescription type) {
+            TypeDescription superType = type.getSuperClass().asErasure();
+            return (superType == null
+                    || superType.represents(Object.class)
+                    || !superType.isAssignableTo(OffHeapObject.class))
+                ? 0L : of(superType);
+        }
+
+        private static long computeFor(TypeDescription type) {
             return type.getDeclaredFields()
                 .filter(isPersistable())
                 .stream().map(t -> {
