@@ -46,8 +46,55 @@ public class JNVMTransformerPlugin implements Plugin {
             .filter(named("recInstance"))
             .getOnly();
 
+    static <T extends FieldDescription> ElementMatcher.Junction<T> isPersistable() {
+        return not( isStatic().or(isTransient()) );
+    }
+
     static <T extends MethodDescription> ElementMatcher.Junction<T> isDefaultConstructorOf(TypeDescription type) {
         return isDefaultConstructor().and(isDeclaredBy(type));
+    }
+
+    static class SIZE {
+        protected static long of(TypeDescription type) {
+            return type.getDeclaredFields()
+                .filter(isPersistable())
+                .stream().map(t -> {
+                    int typeSort = Type.getType(t.getDescriptor()).getSort();
+                    long ret = -1L;
+                    switch(typeSort) {
+                    case Type.BOOLEAN:
+                        ret = Integer.BYTES;
+                        break;
+                    case Type.BYTE:
+                        ret = Byte.BYTES;
+                        break;
+                    case Type.CHAR:
+                        ret = Character.BYTES;
+                        break;
+                    case Type.DOUBLE:
+                        ret = Double.BYTES;
+                        break;
+                    case Type.FLOAT:
+                        ret = Float.BYTES;
+                        break;
+                    case Type.INT:
+                        ret = Integer.BYTES;
+                        break;
+                    case Type.LONG:
+                        ret = Long.BYTES;
+                        break;
+                    case Type.OBJECT:
+                        ret = Long.BYTES;
+                        break;
+                    case Type.SHORT:
+                        ret = Short.BYTES;
+                        break;
+                    default:
+                        break;
+                    }
+                    return ret;
+            }).reduce(0L, Long::sum);
+        }
     }
 
     //TODO allow un-annotated types from a given list
@@ -83,11 +130,10 @@ public class JNVMTransformerPlugin implements Plugin {
                                               Ownership.STATIC,
                                               Visibility.PRIVATE,
                                               FieldManifestation.FINAL)
-                         .value(0L);
+                         .value(SIZE.of(typeDescription));
 
         //Strip non-transient fields
-        builder = builder.visit(new MemberRemoval().stripFields(
-                    not( isStatic().or(isTransient()) )));
+        builder = builder.visit(new MemberRemoval().stripFields(isPersistable()));
 
         //add default constructor
         builder = builder.defineConstructor(Visibility.PACKAGE_PRIVATE)
