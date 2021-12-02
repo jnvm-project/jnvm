@@ -6,6 +6,7 @@ import eu.telecomsudparis.jnvm.transformer.annotations.Persistent;
 
 import net.bytebuddy.asm.AsmVisitorWrapper;
 import net.bytebuddy.asm.MemberRemoval;
+import net.bytebuddy.asm.MemberSubstitution;
 import net.bytebuddy.build.Plugin;
 import net.bytebuddy.description.field.FieldDescription;
 import net.bytebuddy.description.field.FieldList;
@@ -20,6 +21,7 @@ import net.bytebuddy.dynamic.DynamicType;
 import net.bytebuddy.implementation.Implementation;
 import net.bytebuddy.implementation.MethodCall;
 import net.bytebuddy.implementation.SuperMethodCall;
+import net.bytebuddy.implementation.FieldAccessor;
 import net.bytebuddy.jar.asm.AnnotationVisitor;
 import net.bytebuddy.jar.asm.ClassVisitor;
 import net.bytebuddy.jar.asm.Type;
@@ -52,6 +54,28 @@ public class JNVMTransformerPlugin implements Plugin {
 
     static <T extends MethodDescription> ElementMatcher.Junction<T> isDefaultConstructorOf(TypeDescription type) {
         return isDefaultConstructor().and(isDeclaredBy(type));
+    }
+
+    static <T extends MethodDescription> ElementMatcher.Junction<T> isGetterFor(FieldDescription field) {
+        return named(getterNameFor(field)).and(isGenericGetter(field.getType()));
+    }
+
+    static <T extends MethodDescription> ElementMatcher.Junction<T> isSetterFor(FieldDescription field) {
+        return named(setterNameFor(field)).and(isGenericSetter(field.getType()));
+    }
+
+    static <T extends MethodDescription> ElementMatcher.Junction<T> isAccessor() {
+        return nameStartsWith("get").or(nameStartsWith("set"));
+    }
+
+    private static String firstToUpperCase(String str) {
+        return str.substring(0,1).toUpperCase() + str.substring(1);
+    }
+    public static String getterNameFor(FieldDescription field) {
+        return "get" + firstToUpperCase(field.getName());
+    }
+    public static String setterNameFor(FieldDescription field) {
+        return "set" + firstToUpperCase(field.getName());
     }
 
     static class SIZE {
@@ -121,7 +145,6 @@ public class JNVMTransformerPlugin implements Plugin {
 
     //TODO compute persistent layout
     //TODO generate get/set for persistent fields
-    //TODO visit fields and replace accesses/assignation with get/set
     //TODO implement OffHeapObject interface methods
     public DynamicType.Builder<?> apply(DynamicType.Builder<?> builder,
                                         TypeDescription typeDescription,
@@ -145,6 +168,32 @@ public class JNVMTransformerPlugin implements Plugin {
                                               Visibility.PRIVATE,
                                               FieldManifestation.FINAL)
                          .value(SIZE.of(typeDescription));
+
+        //Add getters/setters and replace field access
+        for (FieldDescription field : typeDescription.getDeclaredFields().filter(isPersistable())) {
+            if (!field.isFinal()) {
+                builder = builder.defineMethod(setterNameFor(field),
+                                               void.class,
+                                               Visibility.PUBLIC)
+                                 .withParameters(field.getType())
+                                 .intercept(FieldAccessor.ofBeanProperty());
+            }
+
+            builder = builder.defineMethod(getterNameFor(field),
+                                           field.getType(),
+                                           Visibility.PUBLIC)
+                             .intercept(FieldAccessor.ofBeanProperty());
+
+            builder = builder.visit(MemberSubstitution.relaxed()
+                                 .field(is(field))
+                                     .onRead()
+                                     .replaceWithMethod(isGetterFor(field))
+                                 .field(is(field))
+                                     .onWrite()
+                                     .replaceWithMethod(isSetterFor(field))
+                                 .on(not(isAccessor())));
+
+        }
 
         //Strip non-transient fields
         builder = builder.visit(new MemberRemoval().stripFields(isPersistable()));
