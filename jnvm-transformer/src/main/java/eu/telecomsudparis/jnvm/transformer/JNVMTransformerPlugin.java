@@ -22,6 +22,7 @@ import net.bytebuddy.implementation.Implementation;
 import net.bytebuddy.implementation.MethodCall;
 import net.bytebuddy.implementation.SuperMethodCall;
 import net.bytebuddy.implementation.FieldAccessor;
+import net.bytebuddy.implementation.bytecode.assign.Assigner;
 import net.bytebuddy.jar.asm.AnnotationVisitor;
 import net.bytebuddy.jar.asm.ClassVisitor;
 import net.bytebuddy.jar.asm.Type;
@@ -68,6 +69,64 @@ public class JNVMTransformerPlugin implements Plugin {
         return nameStartsWith("get").or(nameStartsWith("set"));
     }
 
+    static <T extends MethodDescription> ElementMatcher.Junction<T> isPersistentFieldWriterFor(FieldDescription field) {
+        return isDeclaredBy(OffHeapObject.class)
+               .and(named("set" + nameGlue(field) + "Field"))
+               .and(returns(void.class))
+               .and(takesArgument(0, long.class))
+               .and(takesArgument(1, typeGlue(field)));
+    }
+
+    static <T extends MethodDescription> ElementMatcher.Junction<T> isPersistentFieldReaderFor(FieldDescription field) {
+        return isDeclaredBy(OffHeapObject.class)
+               .and(named("get" + nameGlue(field) + "Field"))
+               .and(returns(typeGlue(field)))
+               .and(takesArgument(0, long.class));
+    }
+
+    private static TypeDescription typeGlue(FieldDescription field) {
+        return (field.getType().asErasure().isAssignableTo(OffHeapObject.class))
+            ? TypeDescription.ForLoadedType.of(OffHeapObject.class)
+            : field.getType().asErasure();
+    }
+
+    private static String nameGlue(FieldDescription field) {
+        int typeSort = Type.getType(field.getDescriptor()).getSort();
+        String ret = null;
+        switch(typeSort) {
+            case Type.BOOLEAN:
+                ret = "Boolean";
+                break;
+            case Type.BYTE:
+                ret = "Byte";
+                break;
+            case Type.CHAR:
+                ret = "Char";
+                break;
+            case Type.DOUBLE:
+                ret = "Double";
+                break;
+            case Type.FLOAT:
+                ret = "Float";
+                break;
+            case Type.INT:
+                ret = "Integer";
+                break;
+            case Type.LONG:
+                ret = "Long";
+                break;
+            case Type.OBJECT:
+                ret = "Handle";
+                break;
+            case Type.SHORT:
+                ret = "Short";
+                break;
+            default:
+                break;
+        }
+        return ret;
+    }
+
     private static String firstToUpperCase(String str) {
         return str.substring(0,1).toUpperCase() + str.substring(1);
     }
@@ -96,42 +155,44 @@ public class JNVMTransformerPlugin implements Plugin {
         private static long computeFor(TypeDescription type) {
             return type.getDeclaredFields()
                 .filter(isPersistable())
-                .stream().map(t -> {
-                    int typeSort = Type.getType(t.getDescriptor()).getSort();
-                    long ret = -1L;
-                    switch(typeSort) {
-                    case Type.BOOLEAN:
-                        ret = Integer.BYTES;
-                        break;
-                    case Type.BYTE:
-                        ret = Byte.BYTES;
-                        break;
-                    case Type.CHAR:
-                        ret = Character.BYTES;
-                        break;
-                    case Type.DOUBLE:
-                        ret = Double.BYTES;
-                        break;
-                    case Type.FLOAT:
-                        ret = Float.BYTES;
-                        break;
-                    case Type.INT:
-                        ret = Integer.BYTES;
-                        break;
-                    case Type.LONG:
-                        ret = Long.BYTES;
-                        break;
-                    case Type.OBJECT:
-                        ret = Long.BYTES;
-                        break;
-                    case Type.SHORT:
-                        ret = Short.BYTES;
-                        break;
-                    default:
-                        break;
-                    }
-                    return ret;
-            }).reduce(0L, Long::sum);
+                .stream()
+                    .mapToLong(field -> bytesFor(field))
+                    .reduce(0L, Long::sum);
+        }
+
+        private static long bytesFor(FieldDescription field) {
+            int typeSort = Type.getType(field.getDescriptor()).getSort();
+            long ret = -1L;
+            switch(typeSort) {
+                case Type.BOOLEAN:
+                    ret = Integer.BYTES;
+                    break;
+                case Type.BYTE:
+                    ret = Byte.BYTES;
+                    break;
+                case Type.CHAR:
+                    ret = Character.BYTES;
+                    break;
+                case Type.DOUBLE:
+                    ret = Double.BYTES;
+                    break;
+                case Type.FLOAT:
+                    ret = Float.BYTES;
+                    break;
+                case Type.INT:
+                    ret = Integer.BYTES;
+                    break;
+                case Type.LONG:
+                    ret = Long.BYTES;
+                    break;
+                case Type.OBJECT:
+                    ret = Long.BYTES;
+                    break;
+                case Type.SHORT:
+                    ret = Short.BYTES;
+                    break;
+            }
+            return ret;
         }
     }
 
@@ -143,8 +204,6 @@ public class JNVMTransformerPlugin implements Plugin {
                && target.getDeclaredAnnotations().isAnnotationPresent(Persistent.class);
     }
 
-    //TODO compute persistent layout
-    //TODO generate get/set for persistent fields
     //TODO implement OffHeapObject interface methods
     public DynamicType.Builder<?> apply(DynamicType.Builder<?> builder,
                                         TypeDescription typeDescription,
@@ -170,6 +229,7 @@ public class JNVMTransformerPlugin implements Plugin {
                          .value(SIZE.of(typeDescription));
 
         //Add getters/setters and replace field access
+        long fieldOffset = SIZE.ofParent(typeDescription);
         for (FieldDescription field : typeDescription.getDeclaredFields().filter(isPersistable())) {
             TypeDescription fieldType = field.getType().asErasure();
 
@@ -182,13 +242,22 @@ public class JNVMTransformerPlugin implements Plugin {
                                                void.class,
                                                Visibility.PUBLIC)
                                  .withParameters(field.getType())
-                                 .intercept(FieldAccessor.ofBeanProperty());
+                                 .intercept(
+                                     MethodCall.invoke(isPersistentFieldWriterFor(field))
+                                         .onDefault()
+                                         .with(fieldOffset)
+                                         .withArgument(0)
+                                         .withAssigner(Assigner.DEFAULT, Assigner.Typing.DYNAMIC));
             }
 
             builder = builder.defineMethod(getterNameFor(field),
                                            field.getType(),
                                            Visibility.PUBLIC)
-                             .intercept(FieldAccessor.ofBeanProperty());
+                             .intercept(
+                                 MethodCall.invoke(isPersistentFieldReaderFor(field))
+                                     .onDefault()
+                                     .with(fieldOffset)
+                                     .withAssigner(Assigner.DEFAULT, Assigner.Typing.DYNAMIC));
 
             builder = builder.visit(MemberSubstitution.relaxed()
                                  .field(is(field))
@@ -199,6 +268,7 @@ public class JNVMTransformerPlugin implements Plugin {
                                      .replaceWithMethod(isSetterFor(field))
                                  .on(not(isAccessor())));
 
+            fieldOffset += SIZE.bytesFor(field);
         }
 
         //Strip non-transient fields
