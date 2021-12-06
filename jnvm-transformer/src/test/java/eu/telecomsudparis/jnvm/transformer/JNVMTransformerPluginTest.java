@@ -23,11 +23,15 @@ import eu.telecomsudparis.jnvm.offheap.OffHeapObject;
 class JNVMTransformerPluginTest {
 
     private static final String SAMPLE_PACKAGE = "eu.telecomsudparis.jnvm.transformer.sample.";
-    private static Stream<String> types() {
+    private static Stream<String> validTypes() {
         return Stream.of(
                 "FourLongs",
                 "Simple",
-                "Complexe",
+                "Complexe")
+            .map(SAMPLE_PACKAGE::concat);
+    }
+    private static Stream<String> invalidTypes() {
+        return Stream.of(
                 "InvalidSimple")
             .map(SAMPLE_PACKAGE::concat);
     }
@@ -55,33 +59,27 @@ class JNVMTransformerPluginTest {
     }
 
     @ParameterizedTest
-    @MethodSource("types")
+    @MethodSource("validTypes")
     public void testMatches(String typeName) throws Exception {
         TypeDescription type = TypePool.Default.ofSystemLoader().describe(typeName).resolve();
         Assertions.assertTrue(plugin.matches(type));
     }
 
     @ParameterizedTest
-    @MethodSource("types")
+    @MethodSource("validTypes")
     public void testApply(String typeName) throws Exception {
         TypeDescription type = typePool.describe(typeName).resolve();
-
-        DynamicType.Unloaded<?> dynamicType =
-            plugin.apply(
-                new ByteBuddy().redefine(type, classFileLocator), type, classFileLocator)
-            .make();
-
+        DynamicType.Unloaded<?> dynamicType = doEnhance(type);
         byte[] typeBytes = classFileLocator.locate(typeName).resolve();
         byte[] dynamicTypeBytes = dynamicType.getBytes();
+
         Assertions.assertNotNull(typeBytes);
         Assertions.assertNotNull(dynamicTypeBytes);
         Assertions.assertNotSame(dynamicTypeBytes, typeBytes);
         Assertions.assertNotEquals(dynamicTypeBytes, typeBytes);
 
         instrumentedTypes.put(type.getName(), dynamicTypeBytes);
-        Class<?> transformed = dynamicType
-            .load(getClass().getClassLoader(), ClassLoadingStrategy.Default.CHILD_FIRST)
-            .getLoaded();
+        Class<?> transformed = doLoad(dynamicType);
 
         Assertions.assertNotNull(transformed);
         Assertions.assertTrue(isPersistent(transformed), "implements OffHeapObject");
@@ -89,6 +87,29 @@ class JNVMTransformerPluginTest {
         Assertions.assertTrue(hasField(transformed, "SIZE"), "has SIZE");
         Assertions.assertTrue(hasOnlyTransientInstanceFields(transformed), "has only transient fields");
         Assertions.assertTrue(hasReconstructor(transformed), "has Reconstructor");
+    }
+
+    @ParameterizedTest
+    @MethodSource("invalidTypes")
+    public void testIllegalNonTransientField(String typeName) throws Exception {
+        Exception e = Assertions.assertThrows(IllegalStateException.class, () -> doEnhance(typeName));
+        Assertions.assertEquals("illegal non-transient reference field", e.getMessage());
+    }
+
+    private DynamicType.Unloaded<?> doEnhance(String typeName) {
+        return doEnhance(typePool.describe(typeName).resolve());
+    }
+
+    private DynamicType.Unloaded<?> doEnhance(TypeDescription type) {
+        return plugin.apply(new ByteBuddy()
+                .redefine(type, classFileLocator), type, classFileLocator)
+            .make();
+    }
+
+    private Class<?> doLoad(DynamicType.Unloaded<?> dynamicType) {
+        return dynamicType
+            .load(getClass().getClassLoader(), ClassLoadingStrategy.Default.CHILD_FIRST)
+            .getLoaded();
     }
 
     /* TODO:

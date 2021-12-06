@@ -171,6 +171,12 @@ public class JNVMTransformerPlugin implements Plugin {
 
         //Add getters/setters and replace field access
         for (FieldDescription field : typeDescription.getDeclaredFields().filter(isPersistable())) {
+            TypeDescription fieldType = field.getType().asErasure();
+
+            if (!fieldType.isAssignableTo(OffHeapObject.class)
+                && !(fieldType.isPrimitive() || fieldType.isPrimitiveWrapper())) {
+                throw new IllegalStateException("illegal non-transient reference field");
+            }
             if (!field.isFinal()) {
                 builder = builder.defineMethod(setterNameFor(field),
                                                void.class,
