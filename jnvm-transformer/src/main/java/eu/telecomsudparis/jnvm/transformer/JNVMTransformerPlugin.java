@@ -4,6 +4,7 @@ import eu.telecomsudparis.jnvm.offheap.OffHeap;
 import eu.telecomsudparis.jnvm.offheap.OffHeapObject;
 import eu.telecomsudparis.jnvm.transformer.annotations.Persistent;
 
+import net.bytebuddy.asm.Advice;
 import net.bytebuddy.asm.AsmVisitorWrapper;
 import net.bytebuddy.asm.MemberRemoval;
 import net.bytebuddy.asm.MemberSubstitution;
@@ -21,6 +22,7 @@ import net.bytebuddy.dynamic.DynamicType;
 import net.bytebuddy.implementation.Implementation;
 import net.bytebuddy.implementation.MethodCall;
 import net.bytebuddy.implementation.SuperMethodCall;
+import net.bytebuddy.implementation.StubMethod;
 import net.bytebuddy.implementation.FieldAccessor;
 import net.bytebuddy.implementation.bytecode.assign.Assigner;
 import net.bytebuddy.jar.asm.AnnotationVisitor;
@@ -67,6 +69,17 @@ public class JNVMTransformerPlugin implements Plugin {
 
     static <T extends MethodDescription> ElementMatcher.Junction<T> isAccessor() {
         return nameStartsWith("get").or(nameStartsWith("set"));
+    }
+
+    static boolean isFirstPersistentInHierarchy(TypeDescription type) {
+            TypeDescription superType = type.getSuperClass().asErasure();
+            return isNotPersistent(superType);
+    }
+
+    static boolean isNotPersistent(TypeDescription type) {
+            return type == null
+                    || type.represents(Object.class)
+                    || !type.isAssignableTo(OffHeapObject.class);
     }
 
     static <T extends MethodDescription> ElementMatcher.Junction<T> isPersistentFieldWriterFor(FieldDescription field) {
@@ -146,9 +159,7 @@ public class JNVMTransformerPlugin implements Plugin {
 
         protected static long ofParent(TypeDescription type) {
             TypeDescription superType = type.getSuperClass().asErasure();
-            return (superType == null
-                    || superType.represents(Object.class)
-                    || !superType.isAssignableTo(OffHeapObject.class))
+            return (isNotPersistent(superType))
                 ? 0L : of(superType);
         }
 
@@ -196,6 +207,20 @@ public class JNVMTransformerPlugin implements Plugin {
         }
     }
 
+    static class OffHeapObjectAdvice {
+
+        protected static class Descend {
+            @Advice.OnMethodExit
+            public static void descend(@Advice.FieldValue OffHeapObject member) {
+                OffHeapObject oho = member;
+                if (!oho.mark()) {
+                    oho.descend();
+                }
+            }
+        }
+
+    }
+
     //TODO allow un-annotated types from a given list
     public boolean matches(TypeDescription target) {
         return !target.isAnnotation()
@@ -205,6 +230,7 @@ public class JNVMTransformerPlugin implements Plugin {
     }
 
     //TODO implement OffHeapObject interface methods
+    //TODO annotation & advice to cache proxies using getters return value
     public DynamicType.Builder<?> apply(DynamicType.Builder<?> builder,
                                         TypeDescription typeDescription,
                                         ClassFileLocator classFileLocator) {
@@ -280,6 +306,19 @@ public class JNVMTransformerPlugin implements Plugin {
 
             fieldOffset += SIZE.bytesFor(field);
         }
+
+        //add descend method
+        Implementation descendImplementation = (isFirstPersistentInHierarchy(typeDescription))
+                ? StubMethod.INSTANCE : SuperMethodCall.INSTANCE;
+        for (FieldDescription field : typeDescription.getDeclaredFields()
+                .filter(isPersistable().and(fieldType(isSubTypeOf(OffHeapObject.class))))) {
+            descendImplementation = Advice.withCustomMapping()
+              .bind(Advice.FieldValue.class, field)
+              .to(OffHeapObjectAdvice.Descend.class)
+              .wrap(descendImplementation);
+        }
+        builder = builder.defineMethod("descend", void.class, Visibility.PUBLIC)
+                         .intercept(descendImplementation);
 
         //Strip non-transient fields
         builder = builder.visit(new MemberRemoval().stripFields(isPersistable()));
