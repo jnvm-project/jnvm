@@ -228,6 +228,16 @@ public class JNVMTransformerPlugin implements Plugin {
                                               FieldManifestation.FINAL)
                          .value(SIZE.of(typeDescription));
 
+        //add classId method
+        builder = builder.defineMethod("classId", long.class, Ownership.STATIC,
+                                                           Visibility.PUBLIC)
+                         .intercept(FieldAccessor.ofField("CLASS_ID"));
+
+        //add size method
+        builder = builder.defineMethod("size", long.class, Ownership.STATIC,
+                                                           Visibility.PUBLIC)
+                         .intercept(FieldAccessor.ofField("SIZE"));
+
         //Add getters/setters and replace field access
         long fieldOffset = SIZE.ofParent(typeDescription);
         for (FieldDescription field : typeDescription.getDeclaredFields().filter(isPersistable())) {
