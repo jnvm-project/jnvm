@@ -59,6 +59,14 @@ public class JNVMTransformerPlugin implements Plugin {
         return isDefaultConstructor().and(isDeclaredBy(type));
     }
 
+    static <T extends MethodDescription> ElementMatcher.Junction<T> isReconstructorOf(TypeDescription type) {
+        return isReconstructor().and(isDeclaredBy(type));
+    }
+
+    static <T extends MethodDescription> ElementMatcher.Junction<T> isReconstructor() {
+        return isConstructor().and(isPublic()).and(takesArguments(Void.class, long.class));
+    }
+
     static <T extends MethodDescription> ElementMatcher.Junction<T> isGetterFor(FieldDescription field) {
         return named(getterNameFor(field)).and(isGenericGetter(field.getType()));
     }
@@ -219,6 +227,18 @@ public class JNVMTransformerPlugin implements Plugin {
             }
         }
 
+        protected static class FailureAtomic {
+            @Advice.OnMethodEnter
+            public static void FAStart() {
+                OffHeap.startRecording();
+            }
+
+            @Advice.OnMethodExit
+            public static void FAStop() {
+                OffHeap.stopRecording();
+            }
+        }
+
     }
 
     //TODO allow un-annotated types from a given list
@@ -336,6 +356,21 @@ public class JNVMTransformerPlugin implements Plugin {
                              .andThen(MethodCall.invoke(REC_INSTANCE)
                                  .withThis()
                                  .withArgument(1)));
+
+        //fa-wrap non-private methods
+        if (typeDescription.getDeclaredAnnotations().ofType(TypeDescription.ForLoadedType.of(Persistent.class)).getValue("fa").load(getClass().getClassLoader()).represents("non-private")) {
+            builder = builder.visit(Advice.to(OffHeapObjectAdvice.FailureAtomic.class)
+                                          .on(isMethod().and(
+                                                not(isPrivate()
+                                                  .or(isGetter())
+                                                  .or(isSetter())
+                                                  .or(isStatic())
+                                                  .or(isOverriddenFrom(OffHeapObject.class))
+                                                  .or(isOverriddenFrom(Object.class))))
+                                              .or(isConstructor().and(
+                                                not(isDefaultConstructor()
+                                                    .or(isReconstructor()))))));
+        }
 
         //Remove Persistent annotation
         builder = builder.visit(new AsmVisitorWrapper.ForDeclaredMethods() {
