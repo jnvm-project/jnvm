@@ -2,6 +2,7 @@ package eu.telecomsudparis.jnvm.transformer;
 
 import eu.telecomsudparis.jnvm.offheap.OffHeap;
 import eu.telecomsudparis.jnvm.offheap.OffHeapObject;
+import eu.telecomsudparis.jnvm.offheap.OffHeapObjectHandle;
 import eu.telecomsudparis.jnvm.transformer.annotations.Persistent;
 
 import net.bytebuddy.asm.Advice;
@@ -26,8 +27,14 @@ import net.bytebuddy.implementation.StubMethod;
 import net.bytebuddy.implementation.FieldAccessor;
 import net.bytebuddy.implementation.bytecode.assign.Assigner;
 import net.bytebuddy.jar.asm.AnnotationVisitor;
+import net.bytebuddy.jar.asm.ClassReader;
 import net.bytebuddy.jar.asm.ClassVisitor;
+import net.bytebuddy.jar.asm.FieldVisitor;
+import net.bytebuddy.jar.asm.MethodVisitor;
+import net.bytebuddy.jar.asm.Opcodes;
 import net.bytebuddy.jar.asm.Type;
+import net.bytebuddy.jar.asm.commons.ClassRemapper;
+import net.bytebuddy.jar.asm.commons.SimpleRemapper;
 import net.bytebuddy.matcher.ElementMatcher;
 import net.bytebuddy.pool.TypePool;
 import net.bytebuddy.utility.OpenedClassReader;
@@ -357,6 +364,28 @@ public class JNVMTransformerPlugin implements Plugin {
                                  .withThis()
                                  .withArgument(1)));
 
+        //implement OffHeapObject interface
+        builder = builder.visit(new AsmVisitorWrapper.ForDeclaredMethods() {
+            @Override
+            public ClassVisitor wrap(TypeDescription instrumentedType,
+                    ClassVisitor methodVisitor,
+                    Implementation.Context context,
+                    TypePool typePool,
+                    FieldList<FieldDescription.InDefinedShape> fields,
+                    MethodList<?> methods,
+                    int writerFlags,
+                    int readerFlags) {
+                /* TODO use srcClass according to layout SIZE and ancestor classes */
+                Class<?> srcClass = OffHeapObjectHandle.class;
+                byte[] srcClassBytes = ClassFileLocator.ForClassLoader.read(srcClass);
+                ClassReader srcClassReader = OpenedClassReader.of(srcClassBytes);
+                return new CopyingClassVisitor(OpenedClassReader.ASM_API,
+                        methodVisitor,
+                        srcClassReader,
+                        readerFlags);
+            }
+        });
+
         //fa-wrap non-private methods
         if (typeDescription.getDeclaredAnnotations().ofType(TypeDescription.ForLoadedType.of(Persistent.class)).getValue("fa").load(getClass().getClassLoader()).represents("non-private")) {
             builder = builder.visit(Advice.to(OffHeapObjectAdvice.FailureAtomic.class)
@@ -408,4 +437,61 @@ public class JNVMTransformerPlugin implements Plugin {
         /* do nothing */
     }
 
+    protected static class CopyingClassVisitor extends ClassVisitor {
+        private final int readerFlags;
+        private final ClassReader srcClass;
+        private final ClassVisitor destClassVisitor;
+
+        CopyingClassVisitor(int api, ClassVisitor destClassVisitor, ClassReader srcClass, int readerFlags) {
+            super(api, destClassVisitor);
+            this.readerFlags = readerFlags;
+            this.srcClass = srcClass;
+            this.destClassVisitor = destClassVisitor;
+        }
+        @Override
+        public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
+                /* visitor to substitute class name occurences in srcClass with destClass name */
+                ClassVisitor remapper = new ClassRemapper(destClassVisitor,
+                        new SimpleRemapper(srcClass.getClassName(), name));
+                /* visitor to filter out fields or methods */
+                ClassVisitor filter = new ClassVisitor(OpenedClassReader.ASM_API, remapper) {
+                    @Override
+                    public FieldVisitor visitField(
+                            int access,
+                            String name,
+                            String descriptor,
+                            String signature,
+                            Object value) {
+                        /* No field filter ? */
+                        return super.visitField(access, name, descriptor, signature, value);
+                    }
+                    @Override
+                    public MethodVisitor visitMethod(
+                            int access,
+                            String name,
+                            String descriptor,
+                            String signature,
+                            String[] exceptions) {
+                        /* remove abstract methods */
+                        if ((access & Opcodes.ACC_ABSTRACT) != 0) {
+                            return null;
+                        }
+                        /* remove specifically implemented methods */
+                        if (name.equals("descend")) return null;
+                        /* TODO replace with direct access to static field */
+                        if (name.equals("size")) return null;
+                        /* TODO replace when overridden */
+                        if (name.equals("equals")) return null;
+                        /* TODO prepend code before super constructor call */
+                        if (name.equals("<init>")) return null;
+                        /* TODO prepend code before super constructor call */
+                        if (name.equals("<clinit>")) return null;
+                        return super.visitMethod(access, name, descriptor, signature, exceptions);
+                    }
+                };
+            /* visit srcClass to add content to destClass */
+            srcClass.accept(filter, readerFlags);
+            super.visit(version, access, name, signature, superName, interfaces);
+        }
+    }
 }
