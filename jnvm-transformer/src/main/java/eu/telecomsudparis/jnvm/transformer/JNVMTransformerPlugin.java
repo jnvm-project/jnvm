@@ -46,16 +46,14 @@ import static net.bytebuddy.matcher.ElementMatchers.*;
 
 public class JNVMTransformerPlugin implements Plugin {
 
+    private static final String OHOH_INIT = "_ohoh_init";
+    private static final String OHOH_REINIT = "_ohoh_reinit";
+    private static final String OHOH_CLINIT = "_ohoh_clinit";
+
     private static final MethodDescription REGISTER_USER_KLASS =
         TypeDescription.ForLoadedType.of(OffHeap.Klass.class)
             .getDeclaredMethods()
             .filter(named("registerUserKlass").and(takesArguments(Class.class)))
-            .getOnly();
-
-    private static final MethodDescription REC_INSTANCE =
-        TypeDescription.ForLoadedType.of(OffHeap.class)
-            .getDeclaredMethods()
-            .filter(named("recInstance"))
             .getOnly();
 
     static <T extends FieldDescription> ElementMatcher.Junction<T> isPersistable() {
@@ -359,10 +357,7 @@ public class JNVMTransformerPlugin implements Plugin {
                          .withParameters(Void.class, long.class)
                          .intercept(
                              MethodCall.invoke(
-                                 isDefaultConstructorOf(typeDescription) )
-                             .andThen(MethodCall.invoke(REC_INSTANCE)
-                                 .withThis()
-                                 .withArgument(1)));
+                                 isDefaultConstructorOf(typeDescription) ));
 
         //implement OffHeapObject interface
         builder = builder.visit(new AsmVisitorWrapper.ForDeclaredMethods() {
@@ -441,6 +436,9 @@ public class JNVMTransformerPlugin implements Plugin {
         private final int readerFlags;
         private final ClassReader srcClass;
         private final ClassVisitor destClassVisitor;
+        private String className;
+        private String superName;
+        private MethodVisitor clinitVisitor;
 
         CopyingClassVisitor(int api, ClassVisitor destClassVisitor, ClassReader srcClass, int readerFlags) {
             super(api, destClassVisitor);
@@ -450,6 +448,8 @@ public class JNVMTransformerPlugin implements Plugin {
         }
         @Override
         public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
+                this.className = name;
+                this.superName = superName;
                 /* visitor to substitute class name occurences in srcClass with destClass name */
                 ClassVisitor remapper = new ClassRemapper(destClassVisitor,
                         new SimpleRemapper(srcClass.getClassName(), name));
@@ -483,15 +483,99 @@ public class JNVMTransformerPlugin implements Plugin {
                         /* TODO replace when overridden */
                         if (name.equals("equals")) return null;
                         /* TODO prepend code before super constructor call */
-                        if (name.equals("<init>")) return null;
+                        if (name.equals("<init>")) {
+                            String newName = null;
+                            if (descriptor.equals("()V"))
+                                newName = OHOH_INIT;
+                            if (descriptor.equals("(J)V"))
+                                newName = OHOH_REINIT;
+                            if (newName == null) {
+                                return null;
+                            } else {
+                                int newAccess = access - Opcodes.ACC_PUBLIC + Opcodes.ACC_PRIVATE;
+                                return new MethodVisitor(OpenedClassReader.ASM_API,
+                                        super.visitMethod(newAccess, newName, descriptor, signature, exceptions)) {
+                                    @Override
+                                    public void visitMethodInsn(int opcode, String name, String owner, String descriptor, boolean isInterface) {
+                                        if (opcode == Opcodes.INVOKESPECIAL && owner.equals("<init>"))
+                                            //Remove implicit super call
+                                            //use POP because of preceding ALOAD
+                                            super.visitInsn(Opcodes.POP);
+                                        else
+                                            super.visitMethodInsn(opcode, name, owner, descriptor, isInterface);
+                                    }
+                                };
+                            }
+                        }
                         /* TODO prepend code before super constructor call */
-                        if (name.equals("<clinit>")) return null;
+                        if (name.equals("<clinit>")) {
+                            int newAccess = Opcodes.ACC_PRIVATE + Opcodes.ACC_STATIC;
+                            return super.visitMethod(newAccess, OHOH_CLINIT, descriptor, signature, exceptions);
+                        }
                         return super.visitMethod(access, name, descriptor, signature, exceptions);
                     }
                 };
             /* visit srcClass to add content to destClass */
             srcClass.accept(filter, readerFlags);
             super.visit(version, access, name, signature, superName, interfaces);
+        }
+        @Override
+        public MethodVisitor visitMethod(
+                            int access,
+                            String name,
+                            String descriptor,
+                            String signature,
+                            String[] exceptions) {
+
+            MethodVisitor mv = super.visitMethod(access, name, descriptor, signature, exceptions);
+            if (name.equals("<init>") && !descriptor.equals("(Ljava/lang/Void;J)V") && !descriptor.equals("()V")) {
+                return new MethodVisitor(OpenedClassReader.ASM_API, mv) {
+                    @Override
+                    public void visitMethodInsn(int opcode, String name, String owner, String descriptor, boolean isInterface) {
+                        super.visitMethodInsn(opcode, name, owner, descriptor, isInterface);
+                        //Right after super call
+                        if (opcode == Opcodes.INVOKESPECIAL && name.equals(superName) && owner.equals("<init>")) {
+                            super.visitVarInsn(Opcodes.ALOAD, 0);
+                            super.visitMethodInsn(Opcodes.INVOKEVIRTUAL, className, OHOH_INIT, "()V", false);
+                        }
+                    }
+                };
+            }
+            else if (name.equals("<init>") && descriptor.equals("(Ljava/lang/Void;J)V")) {
+                return new MethodVisitor(OpenedClassReader.ASM_API, mv) {
+                    @Override
+                    public void visitMaxs(int maxStack, int maxLocals) {
+                        super.visitMaxs(maxStack+2, maxLocals);
+                    }
+                    @Override
+                    public void visitMethodInsn(int opcode, String name, String owner, String descriptor, boolean isInterface) {
+                        super.visitMethodInsn(opcode, name, owner, descriptor, isInterface);
+                        //Right after super call
+                        if (opcode == Opcodes.INVOKESPECIAL && name.equals(className) && owner.equals("<init>")) {
+                            super.visitVarInsn(Opcodes.ALOAD, 0);
+                            super.visitVarInsn(Opcodes.LLOAD, 2);
+                            super.visitMethodInsn(Opcodes.INVOKEVIRTUAL, className, OHOH_REINIT, "(J)V", false);
+                        }
+                    }
+                };
+            }
+            else if (name.equals("<clinit>")) {
+                if (clinitVisitor == null) {
+                    clinitVisitor = mv;
+                    clinitVisitor.visitMethodInsn(Opcodes.INVOKESTATIC, className, OHOH_CLINIT, descriptor, false);
+                    return clinitVisitor;
+                }
+            }
+            return mv;
+        }
+        @Override
+        public void visitEnd() {
+            if (clinitVisitor == null) {
+                clinitVisitor = super.visitMethod(Opcodes.ACC_STATIC, "<clinit>", "()V", null, null);
+                clinitVisitor.visitMethodInsn(Opcodes.INVOKESTATIC, className, OHOH_CLINIT, "()V", false);
+                clinitVisitor.visitInsn(Opcodes.RETURN);
+            }
+            super.visitEnd();
         }
     }
 }
