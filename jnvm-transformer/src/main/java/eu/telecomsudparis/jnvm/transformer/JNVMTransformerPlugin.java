@@ -39,6 +39,7 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.AdviceAdapter;
 import org.objectweb.asm.commons.ClassRemapper;
+import org.objectweb.asm.commons.Method;
 import org.objectweb.asm.commons.SimpleRemapper;
 
 import java.util.HashMap;
@@ -538,8 +539,9 @@ public class JNVMTransformerPlugin implements Plugin {
                 return new AdviceAdapter(OpenedClassReader.ASM_API, mv, access, name, descriptor) {
                     @Override
                     protected void onMethodEnter() {
-                        visitVarInsn(Opcodes.ALOAD, 0);
-                        visitMethodInsn(Opcodes.INVOKEVIRTUAL, className, OHOH_INIT, "()V", false);
+                        loadThis();
+                        invokeVirtual(Type.getObjectType(className),
+                            new Method(OHOH_INIT, "()V"));
                     }
                 };
             }
@@ -551,9 +553,10 @@ public class JNVMTransformerPlugin implements Plugin {
                     }
                     @Override
                     protected void onMethodEnter() {
-                        visitVarInsn(Opcodes.ALOAD, 0);
-                        visitVarInsn(Opcodes.LLOAD, 2);
-                        visitMethodInsn(Opcodes.INVOKEVIRTUAL, className, OHOH_REINIT, "(J)V", false);
+                        loadThis();
+                        loadArg(1);
+                        invokeVirtual(Type.getObjectType(className),
+                            new Method(OHOH_REINIT, "(J)V"));
                     }
                 };
             }
@@ -562,7 +565,8 @@ public class JNVMTransformerPlugin implements Plugin {
                     clinitVisitor = new AdviceAdapter(OpenedClassReader.ASM_API, mv, access, name, descriptor) {
                         @Override
                         protected void onMethodEnter() {
-                            visitMethodInsn(Opcodes.INVOKESTATIC, className, OHOH_CLINIT, "()V", false);
+                            invokeStatic(Type.getObjectType(className),
+                                new Method(OHOH_CLINIT, descriptor));
                         }
                     };
                     return clinitVisitor;
