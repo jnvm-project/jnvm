@@ -37,6 +37,7 @@ import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
+import org.objectweb.asm.commons.AdviceAdapter;
 import org.objectweb.asm.commons.ClassRemapper;
 import org.objectweb.asm.commons.SimpleRemapper;
 
@@ -363,6 +364,10 @@ public class JNVMTransformerPlugin implements Plugin {
         //implement OffHeapObject interface
         builder = builder.visit(new AsmVisitorWrapper.ForDeclaredMethods() {
             @Override
+            public int mergeReader(int flags) {
+                return super.mergeReader(flags) | ClassReader.EXPAND_FRAMES;
+            }
+            @Override
             public ClassVisitor wrap(TypeDescription instrumentedType,
                     ClassVisitor methodVisitor,
                     Implementation.Context context,
@@ -530,40 +535,36 @@ public class JNVMTransformerPlugin implements Plugin {
 
             MethodVisitor mv = super.visitMethod(access, name, descriptor, signature, exceptions);
             if (name.equals("<init>") && !descriptor.equals("(Ljava/lang/Void;J)V") && !descriptor.equals("()V")) {
-                return new MethodVisitor(OpenedClassReader.ASM_API, mv) {
+                return new AdviceAdapter(OpenedClassReader.ASM_API, mv, access, name, descriptor) {
                     @Override
-                    public void visitMethodInsn(int opcode, String name, String owner, String descriptor, boolean isInterface) {
-                        super.visitMethodInsn(opcode, name, owner, descriptor, isInterface);
-                        //Right after super call
-                        if (opcode == Opcodes.INVOKESPECIAL && name.equals(superName) && owner.equals("<init>")) {
-                            super.visitVarInsn(Opcodes.ALOAD, 0);
-                            super.visitMethodInsn(Opcodes.INVOKEVIRTUAL, className, OHOH_INIT, "()V", false);
-                        }
+                    protected void onMethodEnter() {
+                        visitVarInsn(Opcodes.ALOAD, 0);
+                        visitMethodInsn(Opcodes.INVOKEVIRTUAL, className, OHOH_INIT, "()V", false);
                     }
                 };
             }
             else if (name.equals("<init>") && descriptor.equals("(Ljava/lang/Void;J)V")) {
-                return new MethodVisitor(OpenedClassReader.ASM_API, mv) {
+                return new AdviceAdapter(OpenedClassReader.ASM_API, mv, access, name, descriptor) {
                     @Override
                     public void visitMaxs(int maxStack, int maxLocals) {
                         super.visitMaxs(maxStack+2, maxLocals);
                     }
                     @Override
-                    public void visitMethodInsn(int opcode, String name, String owner, String descriptor, boolean isInterface) {
-                        super.visitMethodInsn(opcode, name, owner, descriptor, isInterface);
-                        //Right after super call
-                        if (opcode == Opcodes.INVOKESPECIAL && name.equals(className) && owner.equals("<init>")) {
-                            super.visitVarInsn(Opcodes.ALOAD, 0);
-                            super.visitVarInsn(Opcodes.LLOAD, 2);
-                            super.visitMethodInsn(Opcodes.INVOKEVIRTUAL, className, OHOH_REINIT, "(J)V", false);
-                        }
+                    protected void onMethodEnter() {
+                        visitVarInsn(Opcodes.ALOAD, 0);
+                        visitVarInsn(Opcodes.LLOAD, 2);
+                        visitMethodInsn(Opcodes.INVOKEVIRTUAL, className, OHOH_REINIT, "(J)V", false);
                     }
                 };
             }
             else if (name.equals("<clinit>")) {
                 if (clinitVisitor == null) {
-                    clinitVisitor = mv;
-                    clinitVisitor.visitMethodInsn(Opcodes.INVOKESTATIC, className, OHOH_CLINIT, descriptor, false);
+                    clinitVisitor = new AdviceAdapter(OpenedClassReader.ASM_API, mv, access, name, descriptor) {
+                        @Override
+                        protected void onMethodEnter() {
+                            visitMethodInsn(Opcodes.INVOKESTATIC, className, OHOH_CLINIT, "()V", false);
+                        }
+                    };
                     return clinitVisitor;
                 }
             }
