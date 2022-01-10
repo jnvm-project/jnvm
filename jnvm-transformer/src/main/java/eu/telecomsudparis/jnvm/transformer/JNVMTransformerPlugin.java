@@ -502,14 +502,36 @@ public class JNVMTransformerPlugin implements Plugin {
                                 int newAccess = access - Opcodes.ACC_PUBLIC + Opcodes.ACC_PRIVATE;
                                 return new MethodVisitor(OpenedClassReader.ASM_API,
                                         super.visitMethod(newAccess, newName, descriptor, signature, exceptions)) {
+                                    private boolean superCallRemoved = false;
+                                    @Override
+                                    public void visitInsn(int opcode) {
+                                        //Remove instructions preceding the super call
+                                        if (superCallRemoved) {
+                                            super.visitInsn(opcode);
+                                        }
+                                    }
+                                    @Override
+                                    public void visitVarInsn(int opcode, int var) {
+                                        //Remove instructions preceding the super call
+                                        if (superCallRemoved) {
+                                            super.visitVarInsn(opcode, var);
+                                        }
+                                    }
+                                    @Override
+                                    public void visitIntInsn(int opcode, int operand) {
+                                        //Remove instructions preceding the super call
+                                        if (superCallRemoved) {
+                                            super.visitIntInsn(opcode, operand);
+                                        }
+                                    }
                                     @Override
                                     public void visitMethodInsn(int opcode, String name, String owner, String descriptor, boolean isInterface) {
-                                        if (opcode == Opcodes.INVOKESPECIAL && owner.equals("<init>"))
-                                            //Remove implicit super call
-                                            //use POP because of preceding ALOAD
-                                            super.visitInsn(Opcodes.POP);
-                                        else
+                                        if (superCallRemoved) {
                                             super.visitMethodInsn(opcode, name, owner, descriptor, isInterface);
+                                        } else if (opcode == Opcodes.INVOKESPECIAL && owner.equals("<init>")) {
+                                            //Do nothing to delete call to super constructor
+                                            superCallRemoved = true;
+                                        }
                                     }
                                 };
                             }
