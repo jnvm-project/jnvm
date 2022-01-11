@@ -388,6 +388,30 @@ public class JNVMTransformerPlugin implements Plugin {
             }
         });
 
+        builder = builder.visit(new AsmVisitorWrapper.ForDeclaredMethods() {
+            @Override
+            public ClassVisitor wrap(TypeDescription instrumentedType,
+                    ClassVisitor methodVisitor,
+                    Implementation.Context context,
+                    TypePool typePool,
+                    FieldList<FieldDescription.InDefinedShape> fields,
+                    MethodList<?> methods,
+                    int writerFlags,
+                    int readerFlags) {
+                ConstructorEnhancerVisitor cv = null;
+                if (isFirstPersistentInHierarchy(instrumentedType)) {
+                    cv = new TopLevelConstructorVisitor(
+                            OpenedClassReader.ASM_API,
+                            methodVisitor);
+                } else {
+                    cv = new ChildConstructorVisitor(
+                            OpenedClassReader.ASM_API,
+                            methodVisitor);
+                }
+                return cv;
+            }
+        });
+
         //fa-wrap non-private methods
         if (typeDescription.getDeclaredAnnotations().ofType(TypeDescription.ForLoadedType.of(Persistent.class)).getValue("fa").load(getClass().getClassLoader()).represents("non-private")) {
             builder = builder.visit(Advice.to(OffHeapObjectAdvice.FailureAtomic.class)
@@ -444,7 +468,6 @@ public class JNVMTransformerPlugin implements Plugin {
         private final ClassReader srcClass;
         private final ClassVisitor destClassVisitor;
         private String className;
-        private String superName;
         private MethodVisitor clinitVisitor;
 
         CopyingClassVisitor(int api, ClassVisitor destClassVisitor, ClassReader srcClass, int readerFlags) {
@@ -453,10 +476,10 @@ public class JNVMTransformerPlugin implements Plugin {
             this.srcClass = srcClass;
             this.destClassVisitor = destClassVisitor;
         }
+
         @Override
         public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
                 this.className = name;
-                this.superName = superName;
                 /* visitor to substitute class name occurences in srcClass with destClass name */
                 ClassVisitor remapper = new ClassRemapper(destClassVisitor,
                         new SimpleRemapper(srcClass.getClassName(), name));
@@ -548,15 +571,85 @@ public class JNVMTransformerPlugin implements Plugin {
             srcClass.accept(filter, readerFlags);
             super.visit(version, access, name, signature, superName, interfaces);
         }
+
         @Override
         public MethodVisitor visitMethod(
-                            int access,
-                            String name,
-                            String descriptor,
-                            String signature,
-                            String[] exceptions) {
-
+                int access,
+                String name,
+                String descriptor,
+                String signature,
+                String[] exceptions) {
             MethodVisitor mv = super.visitMethod(access, name, descriptor, signature, exceptions);
+            //Call renamed OHOH <clinit> from actual class <clinit>
+            if (name.equals("<clinit>")) {
+                if (clinitVisitor == null) {
+                    clinitVisitor = new AdviceAdapter(OpenedClassReader.ASM_API, mv, access, name, descriptor) {
+                        @Override
+                        protected void onMethodEnter() {
+                            invokeStatic(Type.getObjectType(className),
+                                new Method(OHOH_CLINIT, descriptor));
+                        }
+                    };
+                    return clinitVisitor;
+                }
+            }
+            return mv;
+        }
+
+        @Override
+        public void visitEnd() {
+            //Create class <clinit> to call renamed OHOH <clinit> when class has no static initializer
+            if (clinitVisitor == null) {
+                clinitVisitor = super.visitMethod(Opcodes.ACC_STATIC, "<clinit>", "()V", null, null);
+                clinitVisitor.visitMethodInsn(Opcodes.INVOKESTATIC, className, OHOH_CLINIT, "()V", false);
+                clinitVisitor.visitInsn(Opcodes.RETURN);
+            }
+            super.visitEnd();
+        }
+    }
+
+    protected static abstract class ConstructorEnhancerVisitor extends ClassVisitor {
+        protected String className;
+        protected String superName;
+
+        ConstructorEnhancerVisitor(int api, ClassVisitor parent) {
+            super(api, parent);
+        }
+
+        @Override
+        public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
+            this.className = name;
+            this.superName = superName;
+            super.visit(version, access, name, signature, superName, interfaces);
+        }
+
+        @Override
+        public MethodVisitor visitMethod(
+                int access,
+                String name,
+                String descriptor,
+                String signature,
+                String[] exceptions) {
+            //TODO Transform constructors to allow the allocsize to be specified
+            return super.visitMethod(access, name, descriptor, signature, exceptions);
+        }
+    }
+
+    protected static class TopLevelConstructorVisitor extends ConstructorEnhancerVisitor {
+
+        TopLevelConstructorVisitor(int api, ClassVisitor parent) {
+            super(api, parent);
+        }
+
+        @Override
+        public MethodVisitor visitMethod(
+                int access,
+                String name,
+                String descriptor,
+                String signature,
+                String[] exceptions) {
+            MethodVisitor mv = super.visitMethod(access, name, descriptor, signature, exceptions);
+            //Call OHOH <init> right after super <init> call
             if (name.equals("<init>") && !descriptor.equals("(Ljava/lang/Void;J)V") && !descriptor.equals("()V")) {
                 return new AdviceAdapter(OpenedClassReader.ASM_API, mv, access, name, descriptor) {
                     @Override
@@ -567,6 +660,7 @@ public class JNVMTransformerPlugin implements Plugin {
                     }
                 };
             }
+            //Call OHOH <reinit> right after super <init> call
             else if (name.equals("<init>") && descriptor.equals("(Ljava/lang/Void;J)V")) {
                 return new AdviceAdapter(OpenedClassReader.ASM_API, mv, access, name, descriptor) {
                     @Override
@@ -582,28 +676,26 @@ public class JNVMTransformerPlugin implements Plugin {
                     }
                 };
             }
-            else if (name.equals("<clinit>")) {
-                if (clinitVisitor == null) {
-                    clinitVisitor = new AdviceAdapter(OpenedClassReader.ASM_API, mv, access, name, descriptor) {
-                        @Override
-                        protected void onMethodEnter() {
-                            invokeStatic(Type.getObjectType(className),
-                                new Method(OHOH_CLINIT, descriptor));
-                        }
-                    };
-                    return clinitVisitor;
-                }
-            }
             return mv;
         }
+    }
+
+    protected static class ChildConstructorVisitor extends ConstructorEnhancerVisitor {
+
+        ChildConstructorVisitor(int api, ClassVisitor parent) {
+            super(api, parent);
+        }
+
         @Override
-        public void visitEnd() {
-            if (clinitVisitor == null) {
-                clinitVisitor = super.visitMethod(Opcodes.ACC_STATIC, "<clinit>", "()V", null, null);
-                clinitVisitor.visitMethodInsn(Opcodes.INVOKESTATIC, className, OHOH_CLINIT, "()V", false);
-                clinitVisitor.visitInsn(Opcodes.RETURN);
-            }
-            super.visitEnd();
+        public MethodVisitor visitMethod(
+                int access,
+                String name,
+                String descriptor,
+                String signature,
+                String[] exceptions) {
+
+            return super.visitMethod(access, name, descriptor, signature, exceptions);
+            //TODO Transform calls to super <init> to use generated constructor with additional alloc size parameter
         }
     }
 }
