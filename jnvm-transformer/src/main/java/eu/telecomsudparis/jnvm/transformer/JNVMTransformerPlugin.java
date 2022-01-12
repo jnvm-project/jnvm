@@ -39,6 +39,8 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.AdviceAdapter;
 import org.objectweb.asm.commons.ClassRemapper;
+import org.objectweb.asm.commons.GeneratorAdapter;
+import org.objectweb.asm.commons.LocalVariablesSorter;
 import org.objectweb.asm.commons.Method;
 import org.objectweb.asm.commons.SimpleRemapper;
 
@@ -630,8 +632,108 @@ public class JNVMTransformerPlugin implements Plugin {
                 String descriptor,
                 String signature,
                 String[] exceptions) {
-            //TODO Transform constructors to allow the allocsize to be specified
+            MethodVisitor mv;
+            if (name.equals("<init>")
+                    && !descriptor.equals("(Ljava/lang/Void;J)V")
+                    && !descriptor.equals("()V")) {
+                //Add allocSize method parameter to constructors
+                String newDesc = descriptor.replace(")V", "J)V");
+                int newAccess = Opcodes.ACC_PROTECTED;
+                MethodVisitor newCtx =
+                    super.visitMethod(newAccess, name, newDesc, signature, exceptions);
+                mv = generateProtectedConstructor(newCtx, newAccess, name, newDesc);
+                //Generate constructor with original signature
+                //  and defer call to allocSize enhanced ctx using SIZE static field
+                MethodVisitor origCtx =
+                    super.visitMethod(access, name, descriptor, signature, exceptions);
+                generatePublicConstructor(origCtx, access, name, descriptor, newDesc);
+                return mv;
+            }
             return super.visitMethod(access, name, descriptor, signature, exceptions);
+        }
+
+        private MethodVisitor generateProtectedConstructor(
+                MethodVisitor mv,
+                int access,
+                String name,
+                String descriptor) {
+            //LocalVariableSorter to remap local variables with newDesc
+            return new LocalVariablesSorter(access, descriptor, mv);
+        }
+
+        private MethodVisitor manualProtectedConstructor(
+                MethodVisitor mv,
+                int access,
+                String name,
+                String descriptor) {
+            //Manual local variable sorter
+            //BUG getSize is innacurate with boxed types (LONG, DOUBLE)
+            //No need to update local variable table
+            return new MethodVisitor(OpenedClassReader.ASM_API, mv) {
+                private int nextLocal = 1;
+                @Override
+                public void visitCode() {
+                    for(Type argType : Type.getArgumentTypes(descriptor)) {
+                        nextLocal += argType.getSize();
+                    }
+                    super.visitCode();
+                }
+                @Override
+                public void visitMaxs(int maxStack, int maxLocals) {
+                    super.visitMaxs(maxStack, nextLocal);
+                }
+            };
+        }
+
+        private MethodVisitor generatePublicConstructor(
+                MethodVisitor mv,
+                int access,
+                String name,
+                String oldDesc,
+                String newDesc) {
+            GeneratorAdapter mg = new GeneratorAdapter(mv, access, name, oldDesc);
+            //Generate code
+            mg.visitCode();
+            mg.loadThis();
+            mg.loadArgs();
+            mg.getStatic(Type.getObjectType(className), "SIZE", Type.LONG_TYPE);
+            mg.invokeConstructor(Type.getObjectType(className), new Method("<init>", newDesc));
+            mg.returnValue();
+            mg.endMethod();
+            //Compute locals and stack size
+            int nextLocal = 1; //This
+            for (Type argType : Type.getArgumentTypes(oldDesc)) {
+                nextLocal += argType.getSize(); //Args
+            }
+            nextLocal += Type.getType("J").getSize(); //GETSTATIC_LONG
+            int stackSize = nextLocal; //All locals are loaded on the stack
+            mv.visitMaxs(stackSize, nextLocal);
+            return mv;
+        }
+
+        private MethodVisitor manualPublicConstructor(
+                MethodVisitor mv,
+                int access,
+                String name,
+                String oldDesc,
+                String newDesc) {
+            //Add new constructor with old signature
+            //  and call new signature with default SIZE parameter
+            //  TODO properly compute local var indices
+            mv.visitCode();
+            mv.visitVarInsn(Opcodes.ALOAD, 0);
+            int nextLocal = 1;
+            for (Type argType : Type.getArgumentTypes(oldDesc)) {
+                mv.visitVarInsn(argType.getOpcode(Opcodes.ILOAD), nextLocal);
+                nextLocal += argType.getSize();
+            }
+            nextLocal += Type.getType("J").getSize();
+            mv.visitFieldInsn(Opcodes.GETSTATIC, className, "SIZE", "J");
+            mv.visitMethodInsn(Opcodes.INVOKESPECIAL, className, "<init>", newDesc, false);
+            mv.visitInsn(Opcodes.RETURN);
+            mv.visitMaxs(nextLocal, nextLocal);
+            mv.visitEnd();
+            return mv;
         }
     }
 
