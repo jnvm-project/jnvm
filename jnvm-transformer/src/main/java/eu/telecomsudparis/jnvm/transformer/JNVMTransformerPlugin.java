@@ -618,6 +618,10 @@ public class JNVMTransformerPlugin implements Plugin {
             super(api, parent);
         }
 
+        private static String newCtxDescriptor(String origDesc) {
+            return origDesc.replace(")V", "J)V");
+        }
+
         @Override
         public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
             this.className = name;
@@ -637,7 +641,7 @@ public class JNVMTransformerPlugin implements Plugin {
                     && !descriptor.equals("(Ljava/lang/Void;J)V")
                     && !descriptor.equals("()V")) {
                 //Add allocSize method parameter to constructors
-                String newDesc = descriptor.replace(")V", "J)V");
+                String newDesc = newCtxDescriptor(descriptor);
                 int newAccess = Opcodes.ACC_PROTECTED;
                 MethodVisitor newCtx =
                     super.visitMethod(newAccess, name, newDesc, signature, exceptions);
@@ -796,8 +800,63 @@ public class JNVMTransformerPlugin implements Plugin {
                 String signature,
                 String[] exceptions) {
 
-            return super.visitMethod(access, name, descriptor, signature, exceptions);
-            //TODO Transform calls to super <init> to use generated constructor with additional alloc size parameter
+            MethodVisitor mv = super.visitMethod(access, name, descriptor, signature, exceptions);
+            //Transform calls to super <init> in constructors
+            //  to use the generated one with additional alloc size parameter
+            if (name.equals("<init>")
+                    && !descriptor.equals("(Ljava/lang/Void;J)V")
+                    && !descriptor.equals("()V")) {
+                return new MethodVisitor(OpenedClassReader.ASM_API, mv) {
+                    @Override
+                    public void visitMethodInsn(int opcode, String name, String owner, String desc, boolean isInterface) {
+                        if (opcode == Opcodes.INVOKESPECIAL
+                                && owner.equals("<init>")
+                                && name.equals(superName)) {
+                            //Call constructor from parent with extra alloc size parameter
+                            String newDesc = ConstructorEnhancerVisitor.newCtxDescriptor(desc);
+                            super.visitVarInsn(Opcodes.LLOAD, lastArgIndex(descriptor));
+                            super.visitMethodInsn(opcode, name, owner, newDesc, isInterface);
+                        } else {
+                            super.visitMethodInsn(opcode, name, owner, desc, isInterface);
+                        }
+                    }
+                    private int lastArgIndex(String descriptor) {
+                        int index = 1; //This
+                        for (Type argType : Type.getArgumentTypes(descriptor)) {
+                            index += argType.getSize();
+                        }
+                        return index;
+                    }
+                };
+            //Transform reconstructor to call to super class reconstructor
+            //  instead of default empty constructor
+            } else if (name.equals("<init>")
+                    && descriptor.equals("(Ljava/lang/Void;J)V")) {
+                return new MethodVisitor(OpenedClassReader.ASM_API, mv) {
+                    @Override
+                    public void visitMaxs(int maxStack, int maxLocals) {
+                        int stackSize = maxStack;
+                        stackSize += Type.getObjectType("java/lang/Void").getSize();
+                        stackSize += Type.LONG_TYPE.getSize();
+                        super.visitMaxs(stackSize, maxLocals);
+                    }
+                    @Override
+                    public void visitMethodInsn(int opcode, String name, String owner, String desc, boolean isInterface) {
+                        if (opcode == Opcodes.INVOKESPECIAL
+                                && owner.equals("<init>")
+                                && desc.equals("()V")
+                                && name.equals(className)) {
+                            //Delegate to super class reconstructor instead of this()
+                            super.visitInsn(Opcodes.ACONST_NULL);
+                            super.visitVarInsn(Opcodes.LLOAD, 2);
+                            super.visitMethodInsn(opcode, superName, owner, descriptor, isInterface);
+                        } else {
+                            super.visitMethodInsn(opcode, name, owner, desc, isInterface);
+                        }
+                    }
+                };
+            }
+            return mv;
         }
     }
 }
