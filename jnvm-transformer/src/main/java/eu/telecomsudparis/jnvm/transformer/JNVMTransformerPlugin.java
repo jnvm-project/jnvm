@@ -365,7 +365,8 @@ public class JNVMTransformerPlugin implements Plugin {
                                  isDefaultConstructorOf(typeDescription) ));
 
         //implement OffHeapObject interface
-        builder = builder.visit(new AsmVisitorWrapper.ForDeclaredMethods() {
+        if (isFirsPersistentInHierarchy(typeDescription)) {
+            builder = builder.visit(new AsmVisitorWrapper.ForDeclaredMethods() {
             @Override
             public int mergeReader(int flags) {
                 return super.mergeReader(flags) | ClassReader.EXPAND_FRAMES;
@@ -389,6 +390,7 @@ public class JNVMTransformerPlugin implements Plugin {
                         readerFlags);
             }
         });
+        }
 
         builder = builder.visit(new AsmVisitorWrapper.ForDeclaredMethods() {
             @Override
@@ -495,7 +497,8 @@ public class JNVMTransformerPlugin implements Plugin {
                             String signature,
                             Object value) {
                         /* No field filter ? */
-                        return super.visitField(access, name, descriptor, signature, value);
+                        int newAccess = Opcodes.ACC_PRIVATE;
+                        return super.visitField(newAccess, name, descriptor, signature, value);
                     }
                     @Override
                     public MethodVisitor visitMethod(
@@ -566,7 +569,8 @@ public class JNVMTransformerPlugin implements Plugin {
                             int newAccess = Opcodes.ACC_PRIVATE + Opcodes.ACC_STATIC;
                             return super.visitMethod(newAccess, OHOH_CLINIT, descriptor, signature, exceptions);
                         }
-                        return super.visitMethod(access, name, descriptor, signature, exceptions);
+                        int newAccess = Opcodes.ACC_PRIVATE;
+                        return super.visitMethod(newAccess, name, descriptor, signature, exceptions);
                     }
                 };
             /* visit srcClass to add content to destClass */
