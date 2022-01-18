@@ -523,7 +523,9 @@ public class JNVMTransformerPlugin implements Plugin {
                             String signature,
                             Object value) {
                         /* No field filter ? */
-                        int newAccess = Opcodes.ACC_PRIVATE;
+                        int newAccess = (((access & Opcodes.ACC_STATIC) == Opcodes.ACC_STATIC)
+                                            ? Opcodes.ACC_STATIC : 0 )
+                                        + Opcodes.ACC_PROTECTED;
                         return super.visitField(newAccess, name, descriptor, signature, value);
                     }
                     @Override
@@ -553,7 +555,7 @@ public class JNVMTransformerPlugin implements Plugin {
                             if (newName == null) {
                                 return null;
                             } else {
-                                int newAccess = access - Opcodes.ACC_PUBLIC + Opcodes.ACC_PRIVATE;
+                                int newAccess = Opcodes.ACC_PRIVATE;
                                 return new MethodVisitor(OpenedClassReader.ASM_API,
                                         super.visitMethod(newAccess, newName, descriptor, signature, exceptions)) {
                                     private boolean superCallRemoved = false;
@@ -595,7 +597,9 @@ public class JNVMTransformerPlugin implements Plugin {
                             int newAccess = Opcodes.ACC_PRIVATE + Opcodes.ACC_STATIC;
                             return super.visitMethod(newAccess, OHOH_CLINIT, descriptor, signature, exceptions);
                         }
-                        int newAccess = Opcodes.ACC_PRIVATE;
+                        int newAccess = (((access & Opcodes.ACC_STATIC) == Opcodes.ACC_STATIC)
+                                            ? Opcodes.ACC_STATIC : 0 )
+                                        + Opcodes.ACC_PUBLIC;
                         return super.visitMethod(newAccess, name, descriptor, signature, exceptions);
                     }
                 };
