@@ -39,8 +39,8 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.AdviceAdapter;
 import org.objectweb.asm.commons.ClassRemapper;
-import org.objectweb.asm.commons.GeneratorAdapter;
-import org.objectweb.asm.commons.LocalVariablesSorter;
+//import org.objectweb.asm.commons.GeneratorAdapter;
+//import org.objectweb.asm.commons.LocalVariablesSorter;
 import org.objectweb.asm.commons.Method;
 import org.objectweb.asm.commons.SimpleRemapper;
 
@@ -364,101 +364,124 @@ public class JNVMTransformerPlugin implements Plugin {
                              MethodCall.invoke(
                                  isDefaultConstructorOf(typeDescription) ));
 
-        //implement OffHeapObject interface
-        if (isFirsPersistentInHierarchy(typeDescription)) {
-            builder = builder.visit(new AsmVisitorWrapper.ForDeclaredMethods() {
-            @Override
-            public int mergeReader(int flags) {
-                return super.mergeReader(flags) | ClassReader.EXPAND_FRAMES;
-            }
-            @Override
-            public ClassVisitor wrap(TypeDescription instrumentedType,
-                    ClassVisitor methodVisitor,
-                    Implementation.Context context,
-                    TypePool typePool,
-                    FieldList<FieldDescription.InDefinedShape> fields,
-                    MethodList<?> methods,
-                    int writerFlags,
-                    int readerFlags) {
-                /* TODO use srcClass according to layout SIZE and ancestor classes */
-                Class<?> srcClass = OffHeapObjectHandle.class;
-                byte[] srcClassBytes = ClassFileLocator.ForClassLoader.read(srcClass);
-                ClassReader srcClassReader = OpenedClassReader.of(srcClassBytes);
-                return new CopyingClassVisitor(OpenedClassReader.ASM_API,
-                        methodVisitor,
-                        srcClassReader,
-                        readerFlags);
-            }
-        });
-        }
-
-        builder = builder.visit(new AsmVisitorWrapper.ForDeclaredMethods() {
-            @Override
-            public ClassVisitor wrap(TypeDescription instrumentedType,
-                    ClassVisitor methodVisitor,
-                    Implementation.Context context,
-                    TypePool typePool,
-                    FieldList<FieldDescription.InDefinedShape> fields,
-                    MethodList<?> methods,
-                    int writerFlags,
-                    int readerFlags) {
-                ConstructorEnhancerVisitor cv = null;
-                if (isFirstPersistentInHierarchy(instrumentedType)) {
-                    cv = new TopLevelConstructorVisitor(
-                            OpenedClassReader.ASM_API,
-                            methodVisitor);
-                } else {
-                    cv = new ChildConstructorVisitor(
-                            OpenedClassReader.ASM_API,
-                            methodVisitor);
-                }
-                return cv;
-            }
-        });
-
         //fa-wrap non-private methods
-        if (typeDescription.getDeclaredAnnotations().ofType(TypeDescription.ForLoadedType.of(Persistent.class)).getValue("fa").load(getClass().getClassLoader()).represents("non-private")) {
-            builder = builder.visit(Advice.to(OffHeapObjectAdvice.FailureAtomic.class)
-                                          .on(isMethod().and(
-                                                not(isPrivate()
-                                                  .or(isGetter())
-                                                  .or(isSetter())
-                                                  .or(isStatic())
-                                                  .or(isOverriddenFrom(OffHeapObject.class))
-                                                  .or(isOverriddenFrom(Object.class))))
-                                              .or(isConstructor().and(
-                                                not(isDefaultConstructor()
-                                                    .or(isReconstructor()))))));
+        AsmVisitorWrapper faWrapVisitor = AsmVisitorWrapper.NoOp.INSTANCE;
+        if (typeDescription.getDeclaredAnnotations()
+                           .ofType(TypeDescription.ForLoadedType.of(Persistent.class))
+                           .getValue("fa").load(getClass().getClassLoader())
+                           .represents("non-private")) {
+            ElementMatcher.Junction<MethodDescription> wrappable =
+                    isMethod().and(
+                     not(isPrivate()
+                       .or(isGetter())
+                       .or(isSetter())
+                       .or(isStatic())
+                       .or(isOverriddenFrom(OffHeapObject.class))
+                       .or(isOverriddenFrom(Object.class))))
+                    .or(isConstructor().and(
+                       not(isDefaultConstructor()
+                           .or(isReconstructor()))));
+            faWrapVisitor = Advice.to(OffHeapObjectAdvice.FailureAtomic.class).on(wrappable);
+            /*
+            faWrapVisitor = new AsmVisitorWrapper.ForDeclaredMethods()
+                    .invokable(wrappable,
+                    new AsmVisitorWrapper.ForDeclaredMethods.MethodVisitorWrapper() {
+                @Override
+                public MethodVisitor wrap(TypeDescription instrumentedType,
+                        MethodDescription instrumentedMethod,
+                        MethodVisitor methodVisitor,
+                        Implementation.Context context,
+                        TypePool typePool,
+                        int writerFlags,
+                        int readerFlags) {
+                    return new FaWrapMethodVisitor(OpenedClassReader.ASM_API, methodVisitor);
+                }
+            });
+            */
         }
+
+        //implement OffHeapObject interface
+        AsmVisitorWrapper copyVisitor =
+                (isFirstPersistentInHierarchy(typeDescription))
+            ? new AsmVisitorWrapper.ForDeclaredMethods() {
+                @Override
+                public int mergeReader(int flags) {
+                    return super.mergeReader(flags) | ClassReader.EXPAND_FRAMES;
+                }
+                @Override
+                public ClassVisitor wrap(TypeDescription instrumentedType,
+                        ClassVisitor methodVisitor,
+                        Implementation.Context context,
+                        TypePool typePool,
+                        FieldList<FieldDescription.InDefinedShape> fields,
+                        MethodList<?> methods,
+                        int writerFlags,
+                        int readerFlags) {
+                    /* TODO use srcClass according to layout SIZE and ancestor classes */
+                    Class<?> srcClass = OffHeapObjectHandle.class;
+                    byte[] srcClassBytes = ClassFileLocator.ForClassLoader.read(srcClass);
+                    ClassReader srcClassReader = OpenedClassReader.of(srcClassBytes);
+                    return new CopyingClassVisitor(OpenedClassReader.ASM_API,
+                            methodVisitor,
+                            srcClassReader,
+                            readerFlags);
+                }
+            } : AsmVisitorWrapper.NoOp.INSTANCE;
+
+        AsmVisitorWrapper constructorVisitor =
+                new AsmVisitorWrapper.ForDeclaredMethods() {
+            @Override
+            public ClassVisitor wrap(TypeDescription instrumentedType,
+                    ClassVisitor methodVisitor,
+                    Implementation.Context context,
+                    TypePool typePool,
+                    FieldList<FieldDescription.InDefinedShape> fields,
+                    MethodList<?> methods,
+                    int writerFlags,
+                    int readerFlags) {
+                return (isFirstPersistentInHierarchy(instrumentedType))
+                    ? new TopLevelConstructorVisitor(OpenedClassReader.ASM_API,
+                            methodVisitor)
+                    : new ChildConstructorVisitor(OpenedClassReader.ASM_API,
+                            methodVisitor);
+            }
+        };
 
         //Remove Persistent annotation
-        builder = builder.visit(new AsmVisitorWrapper.ForDeclaredMethods() {
-                    private final AnnotationVisitor REMOVE_ANNOTATION = null;
-                    @Override
-                    public ClassVisitor wrap(TypeDescription instrumentedType,
-                            ClassVisitor methodVisitor,
-                            Implementation.Context context,
-                            TypePool typePool,
-                            FieldList<FieldDescription.InDefinedShape> fields,
-                            MethodList<?> methods,
-                            int writerFlags,
-                            int readerFlags) {
+        AsmVisitorWrapper annotationVisitor =
+                new AsmVisitorWrapper.ForDeclaredMethods() {
+            private final AnnotationVisitor REMOVE_ANNOTATION = null;
+            @Override
+            public ClassVisitor wrap(TypeDescription instrumentedType,
+                    ClassVisitor methodVisitor,
+                    Implementation.Context context,
+                    TypePool typePool,
+                    FieldList<FieldDescription.InDefinedShape> fields,
+                    MethodList<?> methods,
+                    int writerFlags,
+                    int readerFlags) {
 
-                        return new ClassVisitor(OpenedClassReader.ASM_API,
-                                                methodVisitor) {
-                            @Override
-                            public AnnotationVisitor visitAnnotation(
-                                    String descriptor,
-                                    boolean visible) {
-                                if(Type.getDescriptor(Persistent.class)
-                                       .equals(descriptor)) {
-                                    return REMOVE_ANNOTATION;
-                                }
-                                return super.visitAnnotation(descriptor, visible);
-                            }
-                        };
+                return new ClassVisitor(OpenedClassReader.ASM_API,
+                                        methodVisitor) {
+                    @Override
+                    public AnnotationVisitor visitAnnotation(
+                            String descriptor,
+                            boolean visible) {
+                        if(Type.getDescriptor(Persistent.class)
+                               .equals(descriptor)) {
+                            return REMOVE_ANNOTATION;
+                        }
+                        return super.visitAnnotation(descriptor, visible);
                     }
-                  });
+                };
+            }
+        };
+
+        builder = builder.visit(new AsmVisitorWrapper.Compound(
+            faWrapVisitor,
+            copyVisitor,
+            constructorVisitor,
+            annotationVisitor));
 
         return builder;
     }
@@ -649,17 +672,18 @@ public class JNVMTransformerPlugin implements Plugin {
                 int newAccess = Opcodes.ACC_PROTECTED;
                 MethodVisitor newCtx =
                     super.visitMethod(newAccess, name, newDesc, signature, exceptions);
-                mv = generateProtectedConstructor(newCtx, newAccess, name, newDesc);
+                mv = manualProtectedConstructor(newCtx, newAccess, name, newDesc);
                 //Generate constructor with original signature
                 //  and defer call to allocSize enhanced ctx using SIZE static field
                 MethodVisitor origCtx =
                     super.visitMethod(access, name, descriptor, signature, exceptions);
-                generatePublicConstructor(origCtx, access, name, descriptor, newDesc);
+                manualPublicConstructor(origCtx, access, name, descriptor, newDesc);
                 return mv;
             }
             return super.visitMethod(access, name, descriptor, signature, exceptions);
         }
 
+        /*
         private MethodVisitor generateProtectedConstructor(
                 MethodVisitor mv,
                 int access,
@@ -668,6 +692,7 @@ public class JNVMTransformerPlugin implements Plugin {
             //LocalVariableSorter to remap local variables with newDesc
             return new LocalVariablesSorter(access, descriptor, mv);
         }
+        */
 
         private MethodVisitor manualProtectedConstructor(
                 MethodVisitor mv,
@@ -693,6 +718,7 @@ public class JNVMTransformerPlugin implements Plugin {
             };
         }
 
+        /*
         private MethodVisitor generatePublicConstructor(
                 MethodVisitor mv,
                 int access,
@@ -718,6 +744,7 @@ public class JNVMTransformerPlugin implements Plugin {
             mv.visitMaxs(stackSize, nextLocal);
             return mv;
         }
+        */
 
         private MethodVisitor manualPublicConstructor(
                 MethodVisitor mv,
@@ -861,6 +888,35 @@ public class JNVMTransformerPlugin implements Plugin {
                 };
             }
             return mv;
+        }
+    }
+
+    protected static class FaWrapMethodVisitor extends MethodVisitor {
+
+        private boolean startAdded = false;
+        private boolean endAdded = false;
+
+        private static final String CLASSNAME = "eu/telecomsudparis/jnvm/offheap/OffHeap";
+
+        FaWrapMethodVisitor(int api, MethodVisitor parent) {
+            super(api, parent);
+        }
+
+        @Override
+        public void visitCode() {
+            super.visitCode();
+            if (!startAdded) {
+                super.visitMethodInsn(Opcodes.INVOKESTATIC, CLASSNAME, "start_recording", "()V", false);
+                startAdded = true;
+            }
+        }
+        @Override
+        public void visitInsn(int opcode) {
+            if (!endAdded && opcode == Opcodes.RETURN) {
+                super.visitMethodInsn(Opcodes.INVOKESTATIC, CLASSNAME, "stop_recording", "()V", false);
+                endAdded = true;
+            }
+            super.visitInsn(opcode);
         }
     }
 }
