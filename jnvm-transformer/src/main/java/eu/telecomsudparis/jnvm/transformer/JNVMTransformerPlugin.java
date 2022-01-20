@@ -18,6 +18,7 @@ import net.bytebuddy.description.modifier.FieldManifestation;
 import net.bytebuddy.description.modifier.Ownership;
 import net.bytebuddy.description.modifier.Visibility;
 import net.bytebuddy.description.type.TypeDescription;
+import net.bytebuddy.description.type.TypeList;
 import net.bytebuddy.dynamic.ClassFileLocator;
 import net.bytebuddy.dynamic.DynamicType;
 import net.bytebuddy.implementation.Implementation;
@@ -113,6 +114,14 @@ public class JNVMTransformerPlugin implements Plugin {
                .and(named("get" + nameGlue(field) + "Field"))
                .and(returns(typeGlue(field)))
                .and(takesArgument(0, long.class));
+    }
+
+    private static MethodDescription reconstructorHelperOf(TypeDescription type) {
+        return new MethodDescription.Latent(type, new MethodDescription.Token(
+            OHOH_REINIT,
+            Opcodes.ACC_PRIVATE,
+            TypeDescription.Generic.VOID,
+            new TypeList.Generic.ForLoadedTypes(long.class)));
     }
 
     private static TypeDescription typeGlue(FieldDescription field) {
@@ -356,15 +365,22 @@ public class JNVMTransformerPlugin implements Plugin {
         builder = builder.visit(new MemberRemoval().stripFields(isPersistable()));
 
         //add default constructor
-        builder = builder.defineConstructor(Visibility.PACKAGE_PRIVATE)
-                         .intercept(SuperMethodCall.INSTANCE);
+        if (isFirstPersistentInHierarchy(typeDescription)) {
+            builder = builder.defineConstructor(Visibility.PACKAGE_PRIVATE)
+                             .intercept(SuperMethodCall.INSTANCE);
+        }
 
         //add re-constructor
         builder = builder.defineConstructor(Visibility.PUBLIC)
                          .withParameters(Void.class, long.class)
                          .intercept(
-                             MethodCall.invoke(
-                                 isDefaultConstructorOf(typeDescription) ));
+                            (isFirstPersistentInHierarchy(typeDescription))
+                            ? MethodCall.invoke(
+                                  isDefaultConstructorOf(typeDescription))
+                              .andThen(MethodCall.invoke(
+                                  reconstructorHelperOf(typeDescription))
+                                      .withArgument(1))
+                            : SuperMethodCall.INSTANCE);
 
         //fa-wrap non-private methods
         AsmVisitorWrapper faWrapVisitor = AsmVisitorWrapper.NoOp.INSTANCE;
@@ -804,22 +820,6 @@ public class JNVMTransformerPlugin implements Plugin {
                     }
                 };
             }
-            //Call OHOH <reinit> right after super <init> call
-            else if (name.equals("<init>") && descriptor.equals("(Ljava/lang/Void;J)V")) {
-                return new AdviceAdapter(OpenedClassReader.ASM_API, mv, access, name, descriptor) {
-                    @Override
-                    public void visitMaxs(int maxStack, int maxLocals) {
-                        super.visitMaxs(maxStack+2, maxLocals);
-                    }
-                    @Override
-                    protected void onMethodEnter() {
-                        loadThis();
-                        loadArg(1);
-                        invokeVirtual(Type.getObjectType(className),
-                            new Method(OHOH_REINIT, "(J)V"));
-                    }
-                };
-            }
             return mv;
         }
     }
@@ -866,9 +866,68 @@ public class JNVMTransformerPlugin implements Plugin {
                         return index;
                     }
                 };
+            }
+            return mv;
+        }
+    }
+
+    //Not used, ByteBuddy can generate reconstructors just fine directly now,
+    //  no need to further instrument them manually
+    protected static class TopLevelReconstructorVisitor extends TopLevelConstructorVisitor {
+
+        TopLevelReconstructorVisitor(int api, ClassVisitor parent) {
+            super(api, parent);
+        }
+
+        @Override
+        public MethodVisitor visitMethod(
+                int access,
+                String name,
+                String descriptor,
+                String signature,
+                String[] exceptions) {
+
+            MethodVisitor mv = super.visitMethod(access, name, descriptor, signature, exceptions);
+            //Call OHOH <reinit> right after super <init> call
+            if (name.equals("<init>") && descriptor.equals("(Ljava/lang/Void;J)V")) {
+                return new AdviceAdapter(OpenedClassReader.ASM_API, mv, access, name, descriptor) {
+                    @Override
+                    public void visitMaxs(int maxStack, int maxLocals) {
+                        super.visitMaxs(maxStack+2, maxLocals);
+                    }
+                    @Override
+                    protected void onMethodEnter() {
+                        loadThis();
+                        loadArg(1);
+                        invokeVirtual(Type.getObjectType(className),
+                            new Method(OHOH_REINIT, "(J)V"));
+                    }
+                };
+            }
+            return mv;
+        }
+    }
+
+    //Not used, ByteBuddy can generate reconstructors just fine directly now,
+    //  no need to further instrument them manually
+    protected static class ChildReconstructorVisitor extends ChildConstructorVisitor {
+
+        ChildReconstructorVisitor(int api, ClassVisitor parent) {
+            super(api, parent);
+        }
+
+        @Override
+        public MethodVisitor visitMethod(
+                int access,
+                String name,
+                String descriptor,
+                String signature,
+                String[] exceptions) {
+
+            MethodVisitor mv = super.visitMethod(access, name, descriptor, signature, exceptions);
             //Transform reconstructor to call to super class reconstructor
             //  instead of default empty constructor
-            } else if (name.equals("<init>")
+            if (name.equals("<init>")
                     && descriptor.equals("(Ljava/lang/Void;J)V")) {
                 return new MethodVisitor(OpenedClassReader.ASM_API, mv) {
                     @Override
@@ -898,6 +957,9 @@ public class JNVMTransformerPlugin implements Plugin {
         }
     }
 
+    //Not used, ByteBuddy Advice seems to work appropriately.
+    //  Kept here temporarily, in case a simpler manual version
+    //  might be needed later on.
     protected static class FaWrapMethodVisitor extends MethodVisitor {
 
         private boolean startAdded = false;
