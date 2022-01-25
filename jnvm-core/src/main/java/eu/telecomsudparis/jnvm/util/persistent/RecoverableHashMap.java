@@ -41,7 +41,7 @@ public class RecoverableHashMap<K extends OffHeapObject, V extends OffHeapObject
 
         //Reconstructor
         OffHeapNode(long offset) {
-            super( offset );
+            super( null, offset );
         }
         public OffHeapNode(MemoryBlockHandle block) {
             this( block.getOffset() );

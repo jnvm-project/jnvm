@@ -152,9 +152,9 @@ public class OffHeap {
         private static final long SIZE = 24;
 
         Metablock() { super(); }
-        Metablock(long offset) { super( offset ); }
+        Metablock(long offset) { super( null, offset ); }
         public Metablock(MemoryBlockHandle block) { this( block.getOffset() ); }
-        public Metablock(Void v, long offset) { super( offset ); }
+        public Metablock(Void v, long offset) { this( offset ); }
         Metablock setRoot(RecoverableMap root) { setHandleField( offsets[0], root ); return this; }
         Metablock setLog(OffHeapRedoLog log) { setHandleField( offsets[1], log ); return this; }
         Metablock setUserKlasses(OffHeapArray userK) { setHandleField( offsets[2], userK ); return this; }

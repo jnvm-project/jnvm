@@ -23,7 +23,7 @@ public class OffHeapFourLongs extends OffHeapObjectHandle implements FourLongs {
 
     //Reconstructor
     public OffHeapFourLongs(long offset) {
-        super( offset );
+        super( null, offset );
     }
 
     public long size() { return SIZE; }

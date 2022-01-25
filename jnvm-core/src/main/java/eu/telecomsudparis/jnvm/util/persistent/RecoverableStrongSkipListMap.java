@@ -45,7 +45,7 @@ public class RecoverableStrongSkipListMap<K extends OffHeapObject, V extends Off
 
         //Reconstructor
         OffHeapNode(long offset) {
-            super( offset );
+            super( null, offset );
             this.key = (K) getHandleField( offsets[0] );
             //this.value = null;
             this.value = (V) getHandleField( offsets[1] );

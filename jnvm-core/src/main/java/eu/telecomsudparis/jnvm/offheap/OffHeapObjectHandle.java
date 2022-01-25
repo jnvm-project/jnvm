@@ -15,8 +15,12 @@ public abstract class OffHeapObjectHandle implements OffHeapObject {
         OffHeap.newInstance( this );
     }
 
+    public OffHeapObjectHandle(long size) {
+        OffHeap.newInstance( this );
+    }
+
     //Reconstructor
-    public OffHeapObjectHandle(long offset) {
+    public OffHeapObjectHandle(Void nill, long offset) {
         OffHeap.recInstance( this, offset );
     }
 

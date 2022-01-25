@@ -32,8 +32,8 @@ public class OffHeapRedoLog implements OffHeapObject {
             setAddrField( offsets[1], copy );
         }
         //Reconstructor
-        public CopyEntry(MemoryBlockHandle block) { super( block.getOffset() ); }
-        public CopyEntry(Void v, long offset) { super( offset ); }
+        public CopyEntry(MemoryBlockHandle block) { super( null, block.getOffset() ); }
+        public CopyEntry(Void v, long offset) { super( null, offset ); }
 
         @Override
         public long size() { return SIZE; }
@@ -66,8 +66,8 @@ public class OffHeapRedoLog implements OffHeapObject {
             super();
             setAddrField( offsets[0], block );
         }
-        public ValidateEntry(MemoryBlockHandle block) { super( block.getOffset() ); }
-        public ValidateEntry(Void v, long offset) { super( offset ); }
+        public ValidateEntry(MemoryBlockHandle block) { super( null, block.getOffset() ); }
+        public ValidateEntry(Void v, long offset) { super( null, offset ); }
 
         public long size() { return SIZE; }
         public long classId() { return CLASS_ID; }
@@ -105,8 +105,8 @@ public class OffHeapRedoLog implements OffHeapObject {
             setHandleField( offsets[0], oho );
             this.oho = oho;
         }
-        public InvalidateEntry(MemoryBlockHandle block) { super( block.getOffset() ); }
-        public InvalidateEntry(Void v, long offset) { super( offset ); }
+        public InvalidateEntry(MemoryBlockHandle block) { super( null, block.getOffset() ); }
+        public InvalidateEntry(Void v, long offset) { super( null, offset ); }
 
         public long size() { return SIZE; }
         public long classId() { return CLASS_ID; }
