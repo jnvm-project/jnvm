@@ -121,7 +121,7 @@ public class JNVMTransformerPlugin implements Plugin {
             OHOH_REINIT,
             Opcodes.ACC_PRIVATE,
             TypeDescription.Generic.VOID,
-            new TypeList.Generic.ForLoadedTypes(long.class)));
+            new TypeList.Generic.ForLoadedTypes(Void.class, long.class)));
     }
 
     private static TypeDescription typeGlue(FieldDescription field) {
@@ -379,7 +379,7 @@ public class JNVMTransformerPlugin implements Plugin {
                                   isDefaultConstructorOf(typeDescription))
                               .andThen(MethodCall.invoke(
                                   reconstructorHelperOf(typeDescription))
-                                      .withArgument(1))
+                                      .withAllArguments())
                             : SuperMethodCall.INSTANCE);
 
         //fa-wrap non-private methods
@@ -564,9 +564,10 @@ public class JNVMTransformerPlugin implements Plugin {
                         /* TODO prepend code before super constructor call */
                         if (name.equals("<init>")) {
                             String newName = null;
-                            if (descriptor.equals("()V"))
+                            if (descriptor.equals("()V")
+                               || descriptor.equals("(J)V"))
                                 newName = OHOH_INIT;
-                            if (descriptor.equals("(J)V"))
+                            if (descriptor.equals("(Ljava/lang/Void;J)V"))
                                 newName = OHOH_REINIT;
                             if (newName == null) {
                                 return null;
@@ -793,6 +794,14 @@ public class JNVMTransformerPlugin implements Plugin {
             mv.visitEnd();
             return mv;
         }
+
+        private static int lastArgIndex(String descriptor) {
+            int index = 1; //This
+            for (Type argType : Type.getArgumentTypes(descriptor)) {
+                index += argType.getSize();
+            }
+            return index;
+        }
     }
 
     protected static class TopLevelConstructorVisitor extends ConstructorEnhancerVisitor {
@@ -814,9 +823,11 @@ public class JNVMTransformerPlugin implements Plugin {
                 return new AdviceAdapter(OpenedClassReader.ASM_API, mv, access, name, descriptor) {
                     @Override
                     protected void onMethodEnter() {
+                        int lastArgIdx = ConstructorEnhancerVisitor.lastArgIndex(descriptor);
                         loadThis();
+                        super.visitVarInsn(Opcodes.LLOAD, lastArgIdx);
                         invokeVirtual(Type.getObjectType(className),
-                            new Method(OHOH_INIT, "()V"));
+                            new Method(OHOH_INIT, "(J)V"));
                     }
                 };
             }
@@ -852,18 +863,12 @@ public class JNVMTransformerPlugin implements Plugin {
                                 && name.equals(superName)) {
                             //Call constructor from parent with extra alloc size parameter
                             String newDesc = ConstructorEnhancerVisitor.newCtxDescriptor(desc);
-                            super.visitVarInsn(Opcodes.LLOAD, lastArgIndex(descriptor));
+                            int lastArgIdx = ConstructorEnhancerVisitor.lastArgIndex(descriptor);
+                            super.visitVarInsn(Opcodes.LLOAD, lastArgIdx);
                             super.visitMethodInsn(opcode, name, owner, newDesc, isInterface);
                         } else {
                             super.visitMethodInsn(opcode, name, owner, desc, isInterface);
                         }
-                    }
-                    private int lastArgIndex(String descriptor) {
-                        int index = 1; //This
-                        for (Type argType : Type.getArgumentTypes(descriptor)) {
-                            index += argType.getSize();
-                        }
-                        return index;
                     }
                 };
             }
@@ -898,9 +903,10 @@ public class JNVMTransformerPlugin implements Plugin {
                     @Override
                     protected void onMethodEnter() {
                         loadThis();
+                        super.visitInsn(Opcodes.ACONST_NULL);
                         loadArg(1);
                         invokeVirtual(Type.getObjectType(className),
-                            new Method(OHOH_REINIT, "(J)V"));
+                            new Method(OHOH_REINIT, descriptor));
                     }
                 };
             }
