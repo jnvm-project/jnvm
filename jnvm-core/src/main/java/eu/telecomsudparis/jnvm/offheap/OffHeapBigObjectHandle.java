@@ -8,7 +8,7 @@ import eu.telecomsudparis.jnvm.offheap.OffHeap;
 
 public abstract class OffHeapBigObjectHandle implements OffHeapObject {
 
-    protected static final long BYTES_PER_BASE = MemoryBlockHandle.size() - 8 - 8;
+    public static final long BYTES_PER_BASE = MemoryBlockHandle.size() - 8 - 8;
     private transient long offset = -1L;
     private transient long[] bases = null;
     private transient long[] faBases = null;
@@ -27,6 +27,9 @@ public abstract class OffHeapBigObjectHandle implements OffHeapObject {
     protected OffHeapBigObjectHandle() { }
     public static <K extends OffHeapBigObjectHandle> K rec(K ohboh, long offset) {
         return OffHeap.recInstance( ohboh, offset );
+    }
+    public OffHeapBigObjectHandle(Void nill, long offset) {
+        rec( this, offset );
     }
 
     //Destructor
