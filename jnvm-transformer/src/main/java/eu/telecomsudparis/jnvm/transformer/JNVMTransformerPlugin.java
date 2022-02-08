@@ -3,6 +3,7 @@ package eu.telecomsudparis.jnvm.transformer;
 import eu.telecomsudparis.jnvm.offheap.OffHeap;
 import eu.telecomsudparis.jnvm.offheap.OffHeapObject;
 import eu.telecomsudparis.jnvm.offheap.OffHeapObjectHandle;
+import eu.telecomsudparis.jnvm.offheap.OffHeapBigObjectHandle;
 import eu.telecomsudparis.jnvm.transformer.annotations.Persistent;
 
 import net.bytebuddy.asm.Advice;
@@ -88,6 +89,11 @@ public class JNVMTransformerPlugin implements Plugin {
 
     static <T extends MethodDescription> ElementMatcher.Junction<T> isAccessor() {
         return nameStartsWith("get").or(nameStartsWith("set"));
+    }
+
+    static boolean isFirstBigPersistentInHierarchy(TypeDescription type) {
+            return SIZE.isMultiBlock(type)
+                && (isFirstPersistentInHierarchy(type) || !SIZE.isParentMultiBlock(type));
     }
 
     static boolean isFirstPersistentInHierarchy(TypeDescription type) {
@@ -179,6 +185,14 @@ public class JNVMTransformerPlugin implements Plugin {
 
     static class SIZE {
         private static final Map<TypeDescription, Long> cache = new HashMap<>();
+
+        protected static boolean isMultiBlock(TypeDescription type) {
+            return of(type) > OffHeapBigObjectHandle.BYTES_PER_BASE;
+        }
+
+        protected static boolean isParentMultiBlock(TypeDescription type) {
+            return isMultiBlock(type.getSuperClass().asErasure());
+        }
 
         protected static long of(TypeDescription type) {
             return cache.computeIfAbsent(type, t -> computeFor(t) + ofParent(t));
@@ -420,7 +434,8 @@ public class JNVMTransformerPlugin implements Plugin {
 
         //implement OffHeapObject interface
         AsmVisitorWrapper copyVisitor =
-                (isFirstPersistentInHierarchy(typeDescription))
+                (isFirstPersistentInHierarchy(typeDescription)
+                || isFirstBigPersistentInHierarchy(typeDescription))
             ? new AsmVisitorWrapper.ForDeclaredMethods() {
                 @Override
                 public int mergeReader(int flags) {
@@ -435,14 +450,21 @@ public class JNVMTransformerPlugin implements Plugin {
                         MethodList<?> methods,
                         int writerFlags,
                         int readerFlags) {
-                    /* TODO use srcClass according to layout SIZE and ancestor classes */
-                    Class<?> srcClass = OffHeapObjectHandle.class;
+                    Class<?> srcClass = srcClassChooser();
                     byte[] srcClassBytes = ClassFileLocator.ForClassLoader.read(srcClass);
                     ClassReader srcClassReader = OpenedClassReader.of(srcClassBytes);
                     return new CopyingClassVisitor(OpenedClassReader.ASM_API,
                             methodVisitor,
                             srcClassReader,
                             readerFlags);
+                }
+                //Use srcClass according to layout SIZE and ancestor classes
+                private Class<?> srcClassChooser() {
+                    if (SIZE.isMultiBlock(typeDescription)) {
+                        return OffHeapBigObjectHandle.class;
+                    } else {
+                        return OffHeapObjectHandle.class;
+                    }
                 }
             } : AsmVisitorWrapper.NoOp.INSTANCE;
 
