@@ -296,6 +296,7 @@ public class JNVMTransformerPlugin implements Plugin {
 
         //Add getters/setters and replace field access
         long fieldOffset = SIZE.ofParent(typeDescription);
+        AsmVisitorWrapper fieldAccess = AsmVisitorWrapper.NoOp.INSTANCE;
         for (FieldDescription field : typeDescription.getDeclaredFields().filter(isPersistable())) {
             TypeDescription fieldType = field.getType().asErasure();
 
@@ -325,7 +326,8 @@ public class JNVMTransformerPlugin implements Plugin {
                                      .with(fieldOffset)
                                      .withAssigner(Assigner.DEFAULT, Assigner.Typing.DYNAMIC));
 
-            builder = builder.visit(MemberSubstitution.relaxed()
+            fieldAccess = new AsmVisitorWrapper.Compound(fieldAccess,
+                               MemberSubstitution.relaxed()
                                  .field(is(field))
                                      .onRead()
                                      .replaceWithMethod(isGetterFor(field))
@@ -481,6 +483,7 @@ public class JNVMTransformerPlugin implements Plugin {
             faWrapVisitor,
             copyVisitor,
             constructorVisitor,
+            fieldAccess,
             annotationVisitor));
 
         return builder;
