@@ -25,9 +25,9 @@ class JNVMTransformerPluginTest {
     private static final String SAMPLE_PACKAGE = "eu.telecomsudparis.jnvm.transformer.sample.";
     private static Stream<String> validTypes() {
         return Stream.of(
+                "Complexe",
                 "FourLongs",
-                "Simple",
-                "Complexe")
+                "Simple")
             .map(SAMPLE_PACKAGE::concat);
     }
     private static Stream<String> invalidTypes() {

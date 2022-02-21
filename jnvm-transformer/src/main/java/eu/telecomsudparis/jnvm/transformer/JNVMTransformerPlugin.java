@@ -5,6 +5,7 @@ import eu.telecomsudparis.jnvm.offheap.OffHeapObject;
 import eu.telecomsudparis.jnvm.offheap.OffHeapObjectHandle;
 import eu.telecomsudparis.jnvm.offheap.OffHeapBigObjectHandle;
 import eu.telecomsudparis.jnvm.transformer.annotations.Persistent;
+import eu.telecomsudparis.jnvm.transformer.bytebuddy.SpecialMethodCall;
 
 import net.bytebuddy.asm.Advice;
 import net.bytebuddy.asm.AsmVisitorWrapper;
@@ -24,7 +25,6 @@ import net.bytebuddy.dynamic.ClassFileLocator;
 import net.bytebuddy.dynamic.DynamicType;
 import net.bytebuddy.implementation.Implementation;
 import net.bytebuddy.implementation.MethodCall;
-import net.bytebuddy.implementation.SuperMethodCall;
 import net.bytebuddy.implementation.StubMethod;
 import net.bytebuddy.implementation.FieldAccessor;
 import net.bytebuddy.implementation.bytecode.assign.Assigner;
@@ -104,7 +104,15 @@ public class JNVMTransformerPlugin implements Plugin {
     static boolean isNotPersistent(TypeDescription type) {
             return type == null
                     || type.represents(Object.class)
-                    || !type.isAssignableTo(OffHeapObject.class);
+                    || (!type.isAssignableTo(OffHeapObject.class)
+                       && !isPersistentAnnotatedClass(type));
+    }
+
+    static boolean isPersistentAnnotatedClass(TypeDescription type) {
+        return !type.isAnnotation()
+            && !type.isEnum()
+            && !type.isInterface()
+            && type.getDeclaredAnnotations().isAnnotationPresent(Persistent.class);
     }
 
     static <T extends MethodDescription> ElementMatcher.Junction<T> isPersistentFieldWriterFor(FieldDescription field) {
@@ -276,10 +284,7 @@ public class JNVMTransformerPlugin implements Plugin {
 
     //TODO allow un-annotated types from a given list
     public boolean matches(TypeDescription target) {
-        return !target.isAnnotation()
-               && !target.isEnum()
-               && !target.isInterface()
-               && target.getDeclaredAnnotations().isAnnotationPresent(Persistent.class);
+        return isPersistentAnnotatedClass(target);
     }
 
     //TODO implement OffHeapObject interface methods
@@ -364,7 +369,7 @@ public class JNVMTransformerPlugin implements Plugin {
 
         //add descend method
         Implementation descendImplementation = (isFirstPersistentInHierarchy(typeDescription))
-                ? StubMethod.INSTANCE : SuperMethodCall.INSTANCE;
+                ? StubMethod.INSTANCE : SpecialMethodCall.INSTANCE;
         for (FieldDescription field : typeDescription.getDeclaredFields()
                 .filter(isPersistable().and(fieldType(isSubTypeOf(OffHeapObject.class))))) {
             descendImplementation = Advice.withCustomMapping()
@@ -381,7 +386,7 @@ public class JNVMTransformerPlugin implements Plugin {
         //add default constructor
         if (isFirstPersistentInHierarchy(typeDescription)) {
             builder = builder.defineConstructor(Visibility.PACKAGE_PRIVATE)
-                             .intercept(SuperMethodCall.INSTANCE);
+                             .intercept(SpecialMethodCall.INSTANCE);
         }
 
         //add re-constructor
@@ -394,7 +399,7 @@ public class JNVMTransformerPlugin implements Plugin {
                               .andThen(MethodCall.invoke(
                                   reconstructorHelperOf(typeDescription))
                                       .withAllArguments())
-                            : SuperMethodCall.INSTANCE);
+                            : SpecialMethodCall.INSTANCE);
 
         //fa-wrap non-private methods
         AsmVisitorWrapper faWrapVisitor = AsmVisitorWrapper.NoOp.INSTANCE;
