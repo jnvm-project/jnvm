@@ -91,6 +91,14 @@ public class JNVMTransformerPlugin implements Plugin {
         return nameStartsWith("get").or(nameStartsWith("set"));
     }
 
+    static boolean definesGetterFor(FieldDescription field, TypeDescription type) {
+        return type.getDeclaredMethods().filter(isGetterFor(field)).size() > 0;
+    }
+
+    static boolean definesSetterFor(FieldDescription field, TypeDescription type) {
+        return type.getDeclaredMethods().filter(isSetterFor(field)).size() > 0;
+    }
+
     static boolean isFirstBigPersistentInHierarchy(TypeDescription type) {
             return SIZE.isMultiBlock(type)
                 && (isFirstPersistentInHierarchy(type) || !SIZE.isParentMultiBlock(type));
@@ -332,24 +340,31 @@ public class JNVMTransformerPlugin implements Plugin {
                 && !(fieldType.isPrimitive() || fieldType.isPrimitiveWrapper())) {
                 throw new IllegalStateException("illegal non-transient reference field");
             }
-            if (!field.isFinal()) {
-                builder = builder.defineMethod(setterNameFor(field),
-                                               void.class,
-                                               Visibility.PUBLIC)
-                                 .withParameters(field.getType())
+            Visibility setterVisibility = (!field.isFinal()) ? Visibility.PUBLIC : Visibility.PRIVATE;
+            DynamicType.Builder.MethodDefinition.ImplementationDefinition setterImplemBuilder =
+                    (definesSetterFor(field, builder.toTypeDescription()))
+                            ? builder.method(isSetterFor(field))
+                            : builder.defineMethod(setterNameFor(field),
+                                    void.class,
+                                    setterVisibility)
+                                .withParameters(field.getType());
+                builder = setterImplemBuilder
                                  .intercept(
                                      MethodCall.invoke(isPersistentFieldWriterFor(field))
                                          .onDefault()
                                          .with(fieldOffset)
                                          .withArgument(0)
                                          .withAssigner(Assigner.DEFAULT, Assigner.Typing.DYNAMIC));
-            }
 
-            builder = builder.defineMethod(getterNameFor(field),
+            DynamicType.Builder.MethodDefinition.ImplementationDefinition getterImplemBuilder =
+                    (definesGetterFor(field, builder.toTypeDescription()))
+                        ? builder.method(isGetterFor(field))
+                        : builder.defineMethod(getterNameFor(field),
                                            field.getType(),
-                                           Visibility.PUBLIC)
-                             .intercept(
-                                 MethodCall.invoke(isPersistentFieldReaderFor(field))
+                                           Visibility.PUBLIC);
+                builder = getterImplemBuilder
+                                 .intercept(
+                                   MethodCall.invoke(isPersistentFieldReaderFor(field))
                                      .onDefault()
                                      .with(fieldOffset)
                                      .withAssigner(Assigner.DEFAULT, Assigner.Typing.DYNAMIC));
@@ -386,7 +401,14 @@ public class JNVMTransformerPlugin implements Plugin {
         //add default constructor
         if (isFirstPersistentInHierarchy(typeDescription)) {
             builder = builder.defineConstructor(Visibility.PACKAGE_PRIVATE)
-                             .intercept(SpecialMethodCall.INSTANCE);
+                             //.intercept(SpecialMethodCall.INSTANCE);
+                             // Alternative implementation
+                             .intercept(
+                                     MethodCall.invoke(
+                                             typeDescription.getSuperClass()
+                                                     .getDeclaredMethods()
+                                                     .filter(isDefaultConstructor())
+                                                     .getOnly()));
         }
 
         //add re-constructor
