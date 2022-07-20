@@ -353,12 +353,12 @@ public class JNVMTransformerPlugin implements Plugin {
                          .value(SIZE.of(typeDescription));
 
         //add classId method
-        builder = builder.defineMethod("classId", long.class, Ownership.STATIC,
+        builder = builder.defineMethod("classId", long.class, //Ownership.STATIC,
                                                            Visibility.PUBLIC)
                          .intercept(FieldAccessor.ofField("CLASS_ID"));
 
         //add size method
-        builder = builder.defineMethod("size", long.class, Ownership.STATIC,
+        builder = builder.defineMethod("size", long.class, //Ownership.STATIC,
                                                            Visibility.PUBLIC)
                          .intercept(FieldAccessor.ofField("SIZE"));
 
