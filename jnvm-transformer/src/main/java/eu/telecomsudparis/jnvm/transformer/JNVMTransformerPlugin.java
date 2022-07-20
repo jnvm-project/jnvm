@@ -79,6 +79,16 @@ public class JNVMTransformerPlugin implements Plugin {
         return isConstructor().and(isPublic()).and(takesArguments(Void.class, long.class));
     }
 
+    static <T extends MethodDescription> ElementMatcher.Junction<T> isPrivateGetterFor(FieldDescription field) {
+        //Do not use isGenericGetter(field.getType()) that assumes nameStartsWith("get")
+        return named(privateGetterNameFor(field)).and(returnsGeneric(field.getType())).and(isPrivate());
+    }
+
+    static <T extends MethodDescription> ElementMatcher.Junction<T> isPrivateSetterFor(FieldDescription field) {
+        //Do not use isGenericSetter(field.getType()) that assumes nameStartsWith("set")
+        return named(privateSetterNameFor(field)).and(takesGenericArguments(field.getType())).and(isPrivate());
+    }
+
     static <T extends MethodDescription> ElementMatcher.Junction<T> isGetterFor(FieldDescription field) {
         return named(getterNameFor(field)).and(isGenericGetter(field.getType()));
     }
@@ -87,16 +97,32 @@ public class JNVMTransformerPlugin implements Plugin {
         return named(setterNameFor(field)).and(isGenericSetter(field.getType()));
     }
 
+    static <T extends MethodDescription> ElementMatcher.Junction<T> conflictsWithGetterFor(FieldDescription field) {
+        return isGetterFor(field).or(named(getterNameFor(field)).and(takesNoArguments()));
+    }
+
+    static <T extends MethodDescription> ElementMatcher.Junction<T> conflictsWithSetterFor(FieldDescription field) {
+        return isSetterFor(field).or(named(setterNameFor(field)).and(takesGenericArguments(field.getType())));
+    }
+
     static <T extends MethodDescription> ElementMatcher.Junction<T> isAccessor() {
         return nameStartsWith("get").or(nameStartsWith("set"));
     }
 
+    static <T extends MethodDescription> ElementMatcher.Junction<T> isAccessorFor(FieldDescription field) {
+        return isGetterFor(field).or(isSetterFor(field));
+    }
+
+    static <T extends MethodDescription> ElementMatcher.Junction<T> isPrivateAccessorFor(FieldDescription field) {
+        return isPrivateGetterFor(field).or(isPrivateSetterFor(field));
+    }
+
     static boolean definesGetterFor(FieldDescription field, TypeDescription type) {
-        return type.getDeclaredMethods().filter(isGetterFor(field)).size() > 0;
+        return type.getDeclaredMethods().filter(conflictsWithGetterFor(field)).size() > 0;
     }
 
     static boolean definesSetterFor(FieldDescription field, TypeDescription type) {
-        return type.getDeclaredMethods().filter(isSetterFor(field)).size() > 0;
+        return type.getDeclaredMethods().filter(conflictsWithSetterFor(field)).size() > 0;
     }
 
     static boolean isFirstBigPersistentInHierarchy(TypeDescription type) {
@@ -197,6 +223,12 @@ public class JNVMTransformerPlugin implements Plugin {
     }
     public static String setterNameFor(FieldDescription field) {
         return "set" + firstToUpperCase(field.getName());
+    }
+    public static String privateGetterNameFor(FieldDescription field) {
+        return "_" + getterNameFor(field);
+    }
+    public static String privateSetterNameFor(FieldDescription field) {
+        return "_" + setterNameFor(field);
     }
 
     static class SIZE {
@@ -341,43 +373,51 @@ public class JNVMTransformerPlugin implements Plugin {
                 throw new IllegalStateException("illegal non-transient reference field");
             }
             Visibility setterVisibility = (!field.isFinal()) ? Visibility.PUBLIC : Visibility.PRIVATE;
-            DynamicType.Builder.MethodDefinition.ImplementationDefinition setterImplemBuilder =
-                    (definesSetterFor(field, builder.toTypeDescription()))
-                            ? builder.method(isSetterFor(field))
-                            : builder.defineMethod(setterNameFor(field),
-                                    void.class,
-                                    setterVisibility)
-                                .withParameters(field.getType());
-                builder = setterImplemBuilder
-                                 .intercept(
-                                     MethodCall.invoke(isPersistentFieldWriterFor(field))
-                                         .onDefault()
-                                         .with(fieldOffset)
-                                         .withArgument(0)
-                                         .withAssigner(Assigner.DEFAULT, Assigner.Typing.DYNAMIC));
 
-            DynamicType.Builder.MethodDefinition.ImplementationDefinition getterImplemBuilder =
-                    (definesGetterFor(field, builder.toTypeDescription()))
-                        ? builder.method(isGetterFor(field))
-                        : builder.defineMethod(getterNameFor(field),
-                                           field.getType(),
-                                           Visibility.PUBLIC);
-                builder = getterImplemBuilder
-                                 .intercept(
-                                   MethodCall.invoke(isPersistentFieldReaderFor(field))
+            Implementation setterImplementation =
+                                 MethodCall.invoke(isPersistentFieldWriterFor(field))
                                      .onDefault()
                                      .with(fieldOffset)
-                                     .withAssigner(Assigner.DEFAULT, Assigner.Typing.DYNAMIC));
+                                     .withArgument(0)
+                                     .withAssigner(Assigner.DEFAULT, Assigner.Typing.DYNAMIC);
+
+            Implementation getterImplementation =
+                                 MethodCall.invoke(isPersistentFieldReaderFor(field))
+                                     .onDefault()
+                                     .with(fieldOffset)
+                                     .withAssigner(Assigner.DEFAULT, Assigner.Typing.DYNAMIC);
+
+            builder = builder.defineMethod(privateSetterNameFor(field), void.class, Visibility.PRIVATE)
+                             .withParameters(field.getType())
+                             .intercept(setterImplementation);
+
+            builder = builder.defineMethod(privateGetterNameFor(field), field.getType(), Visibility.PRIVATE)
+                             .intercept(getterImplementation);
+
+            if (!(definesSetterFor(field, builder.toTypeDescription()))) {
+                builder = builder.defineMethod(setterNameFor(field),
+                                        void.class,
+                                        setterVisibility)
+                                 .withParameters(field.getType())
+                                 .intercept(setterImplementation);
+            }
+
+            if (!(definesGetterFor(field, builder.toTypeDescription()))) {
+                builder = builder.defineMethod(getterNameFor(field),
+                                        field.getType(),
+                                        Visibility.PUBLIC)
+                                 .intercept(getterImplementation);
+            }
 
             fieldAccess = new AsmVisitorWrapper.Compound(fieldAccess,
                                MemberSubstitution.relaxed()
                                  .field(is(field))
                                      .onRead()
-                                     .replaceWithMethod(isGetterFor(field))
+                                     .replaceWithMethod(isPrivateGetterFor(field))
                                  .field(is(field))
                                      .onWrite()
-                                     .replaceWithMethod(isSetterFor(field))
-                                 .on(not(isAccessor())));
+                                     .replaceWithMethod(isPrivateSetterFor(field))
+                                 .on(not(isPrivateAccessorFor(field))));
 
             fieldOffset += SIZE.bytesFor(field);
         }
