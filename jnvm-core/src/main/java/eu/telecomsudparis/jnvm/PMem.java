@@ -14,7 +14,7 @@ public class PMem {
         System.loadLibrary("jnvm-jni");
       } catch(UnsatisfiedLinkError e) {
         try {
-          InputStream is = ClassLoader.class.getResourceAsStream("/libjnvm-jni.so");
+          InputStream is = PMem.class.getResourceAsStream("/libjnvm-jni.so");
           File file = File.createTempFile("jnvm-jni", ".so");
           OutputStream os = new FileOutputStream(file);
           byte[] buffer = new byte[4096];
