@@ -1,5 +1,10 @@
 # JNVM
 
+## Note
+
+This repository is currently undergoing structural changes (small refactoring, obselete code removal, proper docs, better tests).
+All should stabilize in a few days/weeks.
+
 ## Overview
 
 J-NVM is a framework to efficiently access Non-Volatile Main Memory (NVMM) in
